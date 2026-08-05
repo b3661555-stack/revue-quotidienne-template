@@ -1,0 +1,25 @@
+# Defense in depth : empeche un git add . d'embarquer les artefacts locaux
+.env
+.env.cloud
+.env.local
+.write_test
+.DS_Store
+
+# Backups et generes
+*.bak
+*.tmp
+*.log
+
+# Audio
+*.mp3
+*.aiff
+*.m4a
+
+# Generes localement (le pipeline cloud les regenere via R2)
+revue_*.txt
+sources_*.md
+
+# Scripts locaux Mac (non utilises par GitHub Actions)
+generer_revue_say_legacy.command
+migrer_claude_vers_onedrive.command
+test_vivienne.mp3

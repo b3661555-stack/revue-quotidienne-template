@@ -1,0 +1,95 @@
+name: Daily Review Pipeline
+on:
+  schedule:
+    - cron: "0 3 * * *" # 03:00 UTC nominal; GitHub CEST retarde ~2-3h → run effectif ~05:30-06:00 UTC = 07:30-08:00 Zurich
+  workflow_dispatch: {}
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Install Python deps
+        run: pip install -r cloud-pipeline/requirements.txt
+
+      - name: Run pipeline
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ vars.AZURE_SPEECH_REGION }}
+          AZURE_VOICE_NAME: ${{ vars.AZURE_VOICE_NAME }}
+          PROSODY_RATE: ${{ vars.PROSODY_RATE }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+          R2_PUBLIC_URL: ${{ vars.R2_PUBLIC_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          PODCAST_TITLE: ${{ vars.PODCAST_TITLE }}
+          PODCAST_AUTHOR: ${{ vars.PODCAST_AUTHOR }}
+          PODCAST_EMAIL: ${{ vars.PODCAST_EMAIL }}
+          PODCAST_LANGUAGE: ${{ vars.PODCAST_LANGUAGE }}
+          PODCAST_TIMEZONE: ${{ vars.PODCAST_TIMEZONE }}
+          NCBI_API_KEY: ${{ secrets.NCBI_API_KEY }}
+          NCBI_TOOL: ${{ vars.NCBI_TOOL }}
+          NCBI_EMAIL: ${{ vars.NCBI_EMAIL }}
+          PODCAST_DESCRIPTION: ${{ vars.PODCAST_DESCRIPTION }}
+          EPISODE_PREFIX_GENERAL: ${{ vars.EPISODE_PREFIX_GENERAL }}
+          FEED_FILENAME_GENERAL: ${{ vars.FEED_FILENAME_GENERAL }}
+          PODCAST_TITLE_GENERAL: ${{ vars.PODCAST_TITLE_GENERAL }}
+          PODCAST_DESCRIPTION_GENERAL: ${{ vars.PODCAST_DESCRIPTION_GENERAL }}
+          PODCAST_AUTHOR_GENERAL: ${{ vars.PODCAST_AUTHOR_GENERAL }}
+          SLACK_NOTIFY: ${{ vars.SLACK_NOTIFY }}
+        run: |
+          cd cloud-pipeline
+          python -m src.main
+
+      - name: Notify Slack on failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          WORKFLOW: ${{ github.workflow }}
+          JOB: ${{ github.job }}
+        run: |
+          payload=$(python3 -c '
+          import json, os
+          print(json.dumps({"text": ":rotating_light: *{wf}* a échoué (job `{job}`).\nLogs : <{url}|run #{run}>".format(
+              wf=os.environ["WORKFLOW"], job=os.environ["JOB"],
+              url=os.environ["RUN_URL"], run=os.environ["RUN_URL"].rsplit("/", 1)[-1])}))
+          ')
+          curl -sS -X POST -H "Content-type: application/json" --data "$payload" "$SLACK_WEBHOOK_URL" >/dev/null
+
+      - name: Notify WhatsApp on failure
+        if: failure()
+        env:
+          WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE }}
+          CALLMEBOT_API_KEY: ${{ secrets.CALLMEBOT_API_KEY }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          WORKFLOW: ${{ github.workflow }}
+          JOB: ${{ github.job }}
+          BRANCH: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ -z "$WHATSAPP_PHONE" ] || [ -z "$CALLMEBOT_API_KEY" ]; then
+            echo "[whatsapp] secrets WHATSAPP_PHONE/CALLMEBOT_API_KEY non configurés, skip"
+            exit 0
+          fi
+          MESSAGE=$(printf '🔴 Podcast News : échec de publication\n\nWorkflow: %s\nJob: %s\nBranch: %s\nCommit: %s\n\nLogs: %s' \
+            "$WORKFLOW" "$JOB" "$BRANCH" "${SHA:0:7}" "$RUN_URL")
+          ENCODED=$(python3 -c 'import urllib.parse, sys; print(urllib.parse.quote(sys.stdin.read()))' <<< "$MESSAGE")
+          HTTP_CODE=$(curl -s -o /tmp/cmb.out -w "%{http_code}" \
+            "https://api.callmebot.com/whatsapp.php?phone=${WHATSAPP_PHONE}&apikey=${CALLMEBOT_API_KEY}&text=${ENCODED}")
+          echo "[whatsapp] CallMeBot HTTP $HTTP_CODE"
+          head -c 500 /tmp/cmb.out || true

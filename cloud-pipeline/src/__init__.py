@@ -1,0 +1,1 @@
+"""Revue quotidienne — cloud pipeline."""

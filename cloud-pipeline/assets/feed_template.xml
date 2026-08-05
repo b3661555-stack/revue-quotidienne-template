@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
+     xmlns:atom="http://www.w3.org/2005/Atom"
+     xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>{{ title }}</title>
+    <link>{{ site_url }}</link>
+    <atom:link href="{{ site_url }}/{{ feed_filename }}" rel="self" type="application/rss+xml"/>
+    <atom:link rel="hub" href="https://pubsubhubbub.appspot.com/"/>
+    <language>{{ language }}</language>
+    <copyright>© {{ author }}</copyright>
+    <itunes:author>{{ author }}</itunes:author>
+    <itunes:summary>{{ description }}</itunes:summary>
+    <description>{{ description }}</description>
+    <itunes:owner>
+      <itunes:name>{{ author }}</itunes:name>
+      <itunes:email>{{ email }}</itunes:email>
+    </itunes:owner>
+    <itunes:image href="{{ cover_url }}"/>
+    <image>
+      <url>{{ cover_url }}</url>
+      <title>{{ title }}</title>
+      <link>{{ site_url }}</link>
+    </image>
+    <itunes:category text="News"/>
+    <itunes:category text="Science"/>
+    <itunes:explicit>false</itunes:explicit>
+    <itunes:type>episodic</itunes:type>
+    <lastBuildDate>{{ last_build_date }}</lastBuildDate>
+{% for ep in episodes %}
+    <item>
+      <title>{{ ep.title }}</title>
+      <description>{{ ep.description }}</description>
+      <pubDate>{{ ep.pub_date }}</pubDate>
+      <guid isPermaLink="true">{{ ep.guid }}</guid>
+      <enclosure url="{{ ep.url }}" length="{{ ep.size }}" type="audio/mpeg"/>
+      <itunes:duration>{{ ep.duration }}</itunes:duration>
+      <itunes:explicit>false</itunes:explicit>
+    </item>
+{% endfor %}
+  </channel>
+</rss>
