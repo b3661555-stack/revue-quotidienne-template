@@ -1,0 +1,89 @@
+name: Build texts index
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "45 6 * * *"  # apres l'episode du matin; regenere texts/index.html
+
+jobs:
+  build-index:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate and upload texts/index.html
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+        run: |
+          pip install --quiet boto3
+          python3 << 'PYEOF'
+          import os, re
+          import boto3
+
+          s3 = boto3.client(
+              "s3",
+              endpoint_url="https://%s.r2.cloudflarestorage.com" % os.environ["R2_ACCOUNT_ID"],
+              aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
+              aws_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
+          )
+          bucket = os.environ["R2_BUCKET"]
+
+          keys = []
+          token = None
+          while True:
+              kw = dict(Bucket=bucket, Prefix="texts/")
+              if token:
+                  kw["ContinuationToken"] = token
+              resp = s3.list_objects_v2(**kw)
+              keys += [o["Key"] for o in resp.get("Contents", [])]
+              if not resp.get("IsTruncated"):
+                  break
+              token = resp.get("NextContinuationToken")
+
+          pat = re.compile(r"texts/revue_(\d{4}-\d{2}-\d{2})(-general)?\.txt$")
+          days = {}
+          for k in keys:
+              m = pat.match(k)
+              if not m:
+                  continue
+              d = m.group(1)
+              variant = "general" if m.group(2) else "full"
+              days.setdefault(d, {})[variant] = k.split("/", 1)[1]
+
+          MOIS = ["janvier", "f\u00e9vrier", "mars", "avril", "mai", "juin",
+                  "juillet", "ao\u00fbt", "septembre", "octobre", "novembre", "d\u00e9cembre"]
+
+          def fr(dstr):
+              y, m, dd = dstr.split("-")
+              return "%d %s %s" % (int(dd), MOIS[int(m) - 1], y)
+
+          rows = []
+          for d in sorted(days, reverse=True):
+              v = days[d]
+              links = []
+              g = v.get("general")
+              f = v.get("full")
+              if g:
+                  links.append('<a href="%s">g\u00e9n\u00e9raliste</a>' % g)
+              if f:
+                  links.append('<a href="%s">complet</a>' % f)
+              rows.append('<li><span>%s</span> %s</li>' % (fr(d), " \u00b7 ".join(links)))
+
+          page = ("<!doctype html><html lang=fr><head><meta charset=utf-8>"
+                  "<meta name=viewport content='width=device-width,initial-scale=1'>"
+                  "<title>Revue quotidienne \u2014 scripts</title><style>"
+                  "body{font-family:-apple-system,system-ui,sans-serif;max-width:34rem;"
+                  "margin:2rem auto;padding:0 1rem;color:#222}"
+                  "h1{font-size:1.3rem}ul{padding:0}li{margin:.35rem 0;list-style:none}"
+                  "li span{display:inline-block;min-width:9.5rem;color:#555}"
+                  "a{color:#0a58ca;text-decoration:none}a:hover{text-decoration:underline}"
+                  "p{color:#666;font-size:.9rem}</style></head><body>"
+                  "<h1>Revue quotidienne \u2014 scripts du jour</h1>"
+                  "<p>Le texte de chaque \u00e9pisode. Page mise \u00e0 jour automatiquement chaque matin.</p>"
+                  "<ul>%s</ul></body></html>") % "".join(rows)
+
+          s3.put_object(Bucket=bucket, Key="texts/index.html", Body=page.encode("utf-8"),
+                        ContentType="text/html; charset=utf-8", CacheControl="max-age=300")
+          print("index.html publie: %d jours, %d objets" % (len(days), len(keys)))
+          PYEOF
