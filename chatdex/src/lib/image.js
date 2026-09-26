@@ -1,22 +1,27 @@
 // Photo processing in the browser: decode, resize, compress, and compute a tiny visual
 // fingerprint used by the server-side matcher (colour histogram + difference hash).
 
-export class PhotoError extends Error {}
+export class PhotoError extends Error {
+  constructor(photoCode) {
+    super(photoCode);
+    this.photoCode = photoCode;
+  }
+}
 
 export function loadImage(file) {
   return new Promise((resolve, reject) => {
-    if (!file) return reject(new PhotoError('No photo selected.'));
-    if (file.type && !file.type.startsWith('image/')) return reject(new PhotoError('That file is not a photo. Please pick an image.'));
-    if (file.size > 30 * 1024 * 1024) return reject(new PhotoError('This photo is too large. Try another one.'));
+    if (!file) return reject(new PhotoError('none'));
+    if (file.type && !file.type.startsWith('image/')) return reject(new PhotoError('notImage'));
+    if (file.size > 30 * 1024 * 1024) return reject(new PhotoError('tooLarge'));
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
-      if (!img.naturalWidth || !img.naturalHeight) { URL.revokeObjectURL(url); reject(new PhotoError('This photo seems empty.')); return; }
+      if (!img.naturalWidth || !img.naturalHeight) { URL.revokeObjectURL(url); reject(new PhotoError('empty')); return; }
       resolve({ img, url });
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new PhotoError("We couldn't read this photo. If it's a HEIC file, try a JPEG or take the photo from the app."));
+      reject(new PhotoError('unreadable'));
     };
     img.src = url;
   });

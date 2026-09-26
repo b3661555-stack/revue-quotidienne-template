@@ -3,18 +3,19 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Flag, MapPin, MoreHorizontal } from 'lucide-react';
 import { api } from '../api.js';
 import { useApp } from '../store.jsx';
-import { timeAgo, ordinal } from '../lib/format.js';
+import { errorText, useT } from '../i18n/index.jsx';
 import { Avatar, CatImage, RarityBadge, Sheet, UserLink } from './ui.jsx';
 
 export const REACTIONS = [
-  { id: 'meow', icon: '❤️', label: 'Meow' },
-  { id: 'paw', icon: '🐾', label: 'Paw' },
-  { id: 'respect', icon: '🔥', label: 'Respect' },
-  { id: 'seen', icon: '👀', label: 'Seen it too' },
+  { id: 'meow', icon: '❤️' },
+  { id: 'paw', icon: '🐾' },
+  { id: 'respect', icon: '🔥' },
+  { id: 'seen', icon: '👀' },
 ];
 
 export function ReactionBar({ observation }) {
   const { toast } = useApp();
+  const t = useT();
   const [state, setState] = useState({ reactions: observation.reactions || {}, myReactions: observation.myReactions || [] });
   const [busy, setBusy] = useState(false);
   const react = async (kind) => {
@@ -30,7 +31,7 @@ export function ReactionBar({ observation }) {
       const res = await api(`/observations/${observation.id}/react`, { method: 'POST', body: { kind } });
       setState(res);
     } catch (err) {
-      toast(err.message, 'error');
+      toast(errorText(t, err), 'error');
       setState({ reactions: observation.reactions || {}, myReactions: observation.myReactions || [] });
     } finally {
       setBusy(false);
@@ -39,7 +40,7 @@ export function ReactionBar({ observation }) {
   return (
     <div className="reactions" onClick={(e) => e.stopPropagation()}>
       {REACTIONS.map((r) => (
-        <button key={r.id} className={`reaction ${state.myReactions.includes(r.id) ? 'mine' : ''}`} onClick={() => react(r.id)} title={r.label} aria-label={r.label} aria-pressed={state.myReactions.includes(r.id)}>
+        <button key={r.id} className={`reaction ${state.myReactions.includes(r.id) ? 'mine' : ''}`} onClick={() => react(r.id)} title={t(`reaction.${r.id}`)} aria-label={t(`reaction.${r.id}`)} aria-pressed={state.myReactions.includes(r.id)}>
           <span className="reaction-icon">{r.icon}</span>
           {state.reactions[r.id] ? <span className="reaction-count">{state.reactions[r.id]}</span> : null}
         </button>
@@ -48,77 +49,79 @@ export function ReactionBar({ observation }) {
   );
 }
 
-const REPORT_REASONS = [
-  'Not a cat / wrong photo',
-  'Shows a private address or people',
-  'Animal being disturbed or harmed',
-  'Offensive or inappropriate',
-  'Spam or duplicate',
-];
+const REPORT_REASONS = ['notCat', 'private', 'harm', 'offensive', 'spam'];
 
 export function ReportSheet({ open, onClose, targetType, targetId }) {
   const { toast } = useApp();
+  const t = useT();
   const [reason, setReason] = useState(null);
   const [busy, setBusy] = useState(false);
   const submit = async () => {
     setBusy(true);
     try {
       const res = await api('/reports', { method: 'POST', body: { targetType, targetId, reason } });
-      toast(res.alreadyReported ? 'You already reported this. Thanks!' : 'Thanks, our community moderators will take a look.', 'success');
+      toast(res.alreadyReported ? t('report.already') : t('report.thanks'), 'success');
       onClose();
     } catch (err) {
-      toast(err.message, 'error');
+      toast(errorText(t, err), 'error');
     } finally {
       setBusy(false);
     }
   };
   return (
-    <Sheet open={open} onClose={onClose} title="Report">
-      <p className="muted">What's wrong with this {targetType === 'observation' ? 'capture' : targetType}?</p>
+    <Sheet open={open} onClose={onClose} title={t('report.title')}>
+      <p className="muted">{t(`report.question.${targetType}`)}</p>
       <div className="stack-sm">
         {REPORT_REASONS.map((r) => (
           <label key={r} className={`radio-row ${reason === r ? 'active' : ''}`}>
-            <input type="radio" name="reason" checked={reason === r} onChange={() => setReason(r)} /> {r}
+            <input type="radio" name="reason" checked={reason === r} onChange={() => setReason(r)} /> {t(`report.reason.${r}`)}
           </label>
         ))}
       </div>
-      <button className="btn btn-primary btn-block mt" disabled={!reason || busy} onClick={submit}>Send report</button>
+      <button className="btn btn-primary btn-block mt" disabled={!reason || busy} onClick={submit}>{t('report.send')}</button>
     </Sheet>
   );
 }
 
-function headline(item) {
+export const huntTitle = (t, h) => h.title || t('hunt.defaultTitle', { region: t.region(h.region) });
+
+function headline(t, item) {
   const u = <UserLink user={item.user} />;
   const cat = item.cat && <Link to={`/cat/${item.cat.id}`} onClick={(e) => e.stopPropagation()}>{item.cat.name}</Link>;
   const rare = item.cat && ['rare', 'epic', 'legendary', 'shiny'].includes(item.cat.rarity);
+  const hunt = (label) => <Link to={`/hunts/${item.huntId}`} onClick={(e) => e.stopPropagation()}>{label}</Link>;
   switch (item.type) {
     case 'discovery':
-      return { icon: rare ? '✨' : '🐈', text: <>{u} discovered {rare ? `a ${item.cat.rarity} cat` : 'a new cat'}: {cat}</> };
+      return rare
+        ? { icon: '✨', text: t('feed.discoveryRare', { user: u, cat, rarity: t.rarity(item.cat.rarity) }) }
+        : { icon: '🐈', text: t('feed.discovery', { user: u, cat }) };
     case 'observation':
       return {
         icon: '🐾',
         text: item.data.firstForUser && item.data.hunterRank
-          ? <>{u} found {cat}, the {ordinal(item.data.hunterRank)} hunter to see it</>
-          : <>{u} spotted {cat} again</>,
+          ? t('feed.foundRank', { user: u, cat, nth: t.ordinal(item.data.hunterRank) })
+          : t('feed.spottedAgain', { user: u, cat }),
       };
     case 'respotted':
-      return { icon: '🚨', text: <><strong className="upper">{item.cat.name} has been spotted again!</strong> {u} found it after {item.data.daysMissing} days</> };
+      return { icon: '🚨', text: <><strong className="upper">{t('feed.respottedTitle', { cat: item.cat.name })}</strong> {t('feed.respottedBy', { user: u, count: item.data.daysMissing })}</> };
     case 'achievement':
-      return { icon: '🏆', text: <>{u} unlocked <strong>{item.data.icon} {item.data.name}</strong></> };
+      return { icon: '🏆', text: t('feed.achievement', { user: u, badge: <strong>{item.data.icon} {t(`ach.${item.data.id}.name`)}</strong> }) };
     case 'hunt_created':
-      return { icon: '🏹', text: <>{u} started a <Link to={`/hunts/${item.huntId}`} onClick={(e) => e.stopPropagation()}>Cat Hunt in {item.data.region}</Link></> };
+      return { icon: '🏹', text: t('feed.huntCreated', { user: u, hunt: hunt(t('feed.huntIn', { region: t.region(item.data.region) })) }) };
     case 'hunt_completed':
-      return { icon: '🎯', text: <>{u}'s team completed <Link to={`/hunts/${item.huntId}`} onClick={(e) => e.stopPropagation()}>{item.data.title}</Link></> };
+      return { icon: '🎯', text: t('feed.huntCompleted', { user: u, hunt: hunt(huntTitle(t, item.data)) }) };
     default:
-      return { icon: '🐱', text: <>{u} did something catty</> };
+      return { icon: '🐱', text: u };
   }
 }
 
 export function FeedItem({ item }) {
   const navigate = useNavigate();
+  const t = useT();
   const [reportOpen, setReportOpen] = useState(false);
-  const { icon, text } = headline(item);
+  const { icon, text } = headline(t, item);
   const hasPhoto = item.observation && item.cat;
+  const region = item.observation?.region || item.data.region;
   return (
     <article className={`feed-item feed-${item.type}`}>
       <div className="feed-head">
@@ -126,12 +129,12 @@ export function FeedItem({ item }) {
         <div className="feed-text">
           <p><span className="feed-icon" aria-hidden>{icon}</span> {text}</p>
           <p className="muted small">
-            {timeAgo(item.createdAt)}
-            {(item.observation?.region || item.data.region) && <> · <MapPin size={12} className="inline-icon" /> {item.observation?.region || item.data.region}</>}
+            {t.timeAgo(item.createdAt)}
+            {region && <> · <MapPin size={12} className="inline-icon" /> {t.region(region)}</>}
           </p>
         </div>
         {item.observation && (
-          <button className="icon-btn icon-btn-sm" aria-label="More" onClick={() => setReportOpen(true)}><MoreHorizontal size={18} /></button>
+          <button className="icon-btn icon-btn-sm" aria-label={t('common.more')} onClick={() => setReportOpen(true)}><MoreHorizontal size={18} /></button>
         )}
       </div>
       {hasPhoto && (
@@ -145,7 +148,7 @@ export function FeedItem({ item }) {
       )}
       {item.observation && <ReactionBar observation={item.observation} />}
       {item.observation && (
-        <Sheet open={reportOpen} onClose={() => setReportOpen(false)} title="Capture options">
+        <Sheet open={reportOpen} onClose={() => setReportOpen(false)} title={t('feed.captureOptions')}>
           <ReportInline targetType="observation" targetId={item.observation.id} onDone={() => setReportOpen(false)} />
         </Sheet>
       )}
@@ -154,10 +157,11 @@ export function FeedItem({ item }) {
 }
 
 export function ReportInline({ targetType, targetId, onDone }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button className="menu-row danger" onClick={() => setOpen(true)}><Flag size={18} /> Report this {targetType === 'observation' ? 'capture' : targetType}</button>
+      <button className="menu-row danger" onClick={() => setOpen(true)}><Flag size={18} /> {t(`report.action.${targetType}`)}</button>
       <ReportSheet open={open} onClose={() => { setOpen(false); onDone?.(); }} targetType={targetType} targetId={targetId} />
     </>
   );

@@ -63,7 +63,7 @@ try {
   const badFile = path.join(dir, 'notes.txt');
   fs.writeFileSync(badFile, 'definitely not a cat');
 
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, geolocation: { latitude: 46.5197, longitude: 6.6323 }, permissions: ['geolocation'] });
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'en-US', geolocation: { latitude: 46.5197, longitude: 6.6323 }, permissions: ['geolocation'] });
   const page = await ctx.newPage();
   const pageErrors = [];
   page.on('pageerror', (e) => pageErrors.push(e.message));
@@ -228,7 +228,7 @@ try {
   });
 
   await step('location denied → pick an area manually', async () => {
-    const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'en-US' });
     await ctx2.grantPermissions([]);
     const p2 = await ctx2.newPage();
     await p2.goto(BASE);
@@ -258,6 +258,70 @@ try {
     await page.goto(`${BASE}/me/edit`);
     await page.getByRole('button', { name: 'Log out' }).click();
     await page.getByRole('button', { name: 'Start hunting' }).waitFor();
+  });
+
+  // Untranslated keys would show up as raw "section.key" strings.
+  const RAW_KEY = /\b(app|common|nav|home|feed|cat|capture|match|name|reward|xp|dex|profile|hunt|map|notif|settings|errors|social|stat|rarity|coat|pattern|eyes|attr|loc|area|pick|report|badges|ach|welcome|auth|field|guide|level|title|time|region|compare|photo|offline|reaction|tag)\.[a-zA-Z_]+\b/;
+  const assertTranslated = async (p, where) => {
+    const text = await p.evaluate(() => document.body.innerText);
+    const m = RAW_KEY.exec(text.replace(/[\w.-]+@[\w.-]+/g, ''));
+    assert.equal(m, null, `${where}: untranslated key "${m?.[0]}"`);
+  };
+
+  await step('language switcher on the welcome screen (15 languages)', async () => {
+    const langs = await page.locator('.lang-select select option').evaluateAll((os) => os.map((o) => o.value));
+    assert.ok(langs.length >= 15, `only ${langs.length} languages`);
+    for (const lang of langs) {
+      await page.locator('.lang-select select').selectOption(lang);
+      await page.waitForFunction((l) => document.documentElement.lang === l, lang);
+      await page.waitForTimeout(150);
+      await assertTranslated(page, `welcome/${lang}`);
+      if (lang !== 'en') {
+        const start = await page.locator('.welcome-body .btn-primary').innerText();
+        assert.notEqual(start, 'Start hunting', `${lang}: welcome not translated`);
+      }
+    }
+    await page.locator('.lang-select select').selectOption('fr');
+    await page.waitForTimeout(200);
+    await shot('e2e-11-welcome-fr');
+    await page.locator('.lang-select select').selectOption('en');
+  });
+
+  await step('Arabic: right-to-left layout, translated app pages', async () => {
+    const ctx3 = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'ar', geolocation: { latitude: 46.43, longitude: 6.91 }, permissions: ['geolocation'] });
+    const p3 = await ctx3.newPage();
+    p3.on('pageerror', (e) => pageErrors.push(`ar: ${e.message}`));
+    await p3.goto(BASE);
+    await p3.waitForFunction(() => document.documentElement.dir === 'rtl' && document.documentElement.lang === 'ar');
+    await p3.locator('.welcome-body .btn-link').click(); // demo login
+    await p3.locator('.hero').waitFor();
+    for (const url of ['/', '/dex', '/cat/1', '/me', '/capture', '/hunts', '/achievements', '/notifications', '/explore']) {
+      await p3.goto(BASE + url);
+      await p3.waitForTimeout(1200);
+      await assertTranslated(p3, `ar${url}`);
+      if (url === '/' || url === '/cat/1') await p3.screenshot({ path: path.join(shots, `e2e-12-ar${url.replace(/\//g, '_')}.png`) });
+    }
+    await ctx3.close();
+  });
+
+  await step('Japanese and Russian app pages have no untranslated keys', async () => {
+    for (const locale of ['ja', 'ru', 'hi']) {
+      const c = await browser.newContext({ viewport: { width: 390, height: 844 }, locale });
+      const p = await c.newPage();
+      p.on('pageerror', (e) => pageErrors.push(`${locale}: ${e.message}`));
+      await p.goto(BASE);
+      await p.locator('.welcome-body .btn-link').click();
+      await p.locator('.hero').waitFor();
+      for (const url of ['/', '/dex?scope=mine', '/cat/2', '/u/sarah', '/hunts']) {
+        await p.goto(BASE + url);
+        await p.waitForTimeout(900);
+        await assertTranslated(p, `${locale}${url}`);
+      }
+      await p.goto(BASE);
+      await p.waitForTimeout(900);
+      await p.screenshot({ path: path.join(shots, `e2e-13-${locale}-home.png`) });
+      await c.close();
+    }
   });
 
   assert.deepEqual(pageErrors, [], `Page errors: ${pageErrors.join('\n')}`);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../store.jsx';
 import { CatArt } from '../components/ui.jsx';
+import { errorText, LanguageSelect, useT } from '../i18n/index.jsx';
 
 const HERO_CATS = [
   { coatColor: 'orange', pattern: 'tabby', eyeColor: 'green', artSeed: 11 },
@@ -10,15 +11,22 @@ const HERO_CATS = [
   { coatColor: 'cream', pattern: 'colorpoint', eyeColor: 'blue', artSeed: 5, rarity: 'shiny' },
 ];
 
-export const GUIDELINES = [
-  ['👀', 'Observe from a distance. Never chase, pick up or corner a cat.'],
-  ['🚧', 'Stay on public ground. Never enter gardens or private property.'],
-  ['🍗', "Don't feed cats that aren't yours without the owner's permission."],
-  ['📍', 'Locations are always approximate. Never share a cat’s exact home.'],
-];
+export const GUIDELINES = [['👀', 'guide.distance'], ['🚧', 'guide.public'], ['🍗', 'guide.feed'], ['📍', 'guide.location']];
+
+export function Guidelines({ children }) {
+  const t = useT();
+  return (
+    <div className="guidelines">
+      <h3>🐾 {t('guide.title')}</h3>
+      <ul>{GUIDELINES.map(([i, k]) => <li key={k}><span>{i}</span>{t(k)}</li>)}</ul>
+      {children}
+    </div>
+  );
+}
 
 export default function Welcome() {
   const { login, register, meta } = useApp();
+  const t = useT();
   const [mode, setMode] = useState('home');
   const [form, setForm] = useState({ email: '', password: '', username: '', displayName: '', acceptGuidelines: false });
   const [error, setError] = useState(null);
@@ -33,7 +41,7 @@ export default function Welcome() {
       if (mode === 'login') await login(form.email, form.password);
       else await register(form);
     } catch (err) {
-      setError(err.message);
+      setError(errorText(t, err));
     } finally {
       setBusy(false);
     }
@@ -42,24 +50,25 @@ export default function Welcome() {
   const demo = async () => {
     setBusy(true);
     setError(null);
-    try { await login('demo@chatdex.app', 'chatdex'); } catch (err) { setError(err.message); setBusy(false); }
+    try { await login('demo@chatdex.app', 'chatdex'); } catch (err) { setError(errorText(t, err)); setBusy(false); }
   };
 
   if (mode === 'home') {
     return (
       <main className="welcome">
+        <LanguageSelect className="welcome-lang" />
         <div className="welcome-cats" aria-hidden>
           {HERO_CATS.map((c, i) => <div key={i} className={`welcome-cat wc-${i}`}><CatArt cat={c} /></div>)}
         </div>
         <div className="welcome-body">
           <h1 className="logo-big">Chatdex</h1>
-          <p className="tagline">Gotta catch ’em cats.</p>
-          <p className="welcome-pitch">Photograph the cats you meet, grow your collection, and see who else has found them.</p>
+          <p className="tagline">{t('app.tagline')}</p>
+          <p className="welcome-pitch">{t('welcome.pitch')}</p>
           <div className="stack">
-            <button className="btn btn-primary btn-lg btn-block" onClick={() => setMode('register')}>Start hunting</button>
-            <button className="btn btn-ghost btn-lg btn-block" onClick={() => setMode('login')}>I already have an account</button>
+            <button className="btn btn-primary btn-lg btn-block" onClick={() => setMode('register')}>{t('welcome.start')}</button>
+            <button className="btn btn-ghost btn-lg btn-block" onClick={() => setMode('login')}>{t('welcome.haveAccount')}</button>
             {meta?.demoData && (
-              <button className="btn btn-link" onClick={demo} disabled={busy}>👀 Just looking? Explore the demo world</button>
+              <button className="btn btn-link" onClick={demo} disabled={busy}>👀 {t('welcome.demo')}</button>
             )}
           </div>
           {error && <p className="form-error">{error}</p>}
@@ -70,49 +79,47 @@ export default function Welcome() {
 
   return (
     <main className="welcome welcome-form">
-      <button className="btn btn-link back-link" onClick={() => { setMode('home'); setError(null); }}>← Back</button>
+      <button className="btn btn-link back-link" onClick={() => { setMode('home'); setError(null); }}>{t('common.backArrow')}</button>
       <h1 className="logo">Chatdex</h1>
-      <h2>{mode === 'login' ? 'Welcome back, hunter' : 'Create your hunter profile'}</h2>
+      <h2>{mode === 'login' ? t('auth.loginTitle') : t('auth.registerTitle')}</h2>
       <form onSubmit={submit} className="stack" noValidate>
         {mode === 'register' && (
           <>
             <label className="field">
-              <span>Username</span>
+              <span>{t('field.username')}</span>
               <input value={form.username} onChange={set('username')} autoComplete="username" placeholder="catlover_42" maxLength={20} required />
             </label>
             <label className="field">
-              <span>Display name <em className="muted">(optional)</em></span>
+              <span>{t('field.displayName')} <em className="muted">{t('common.optional')}</em></span>
               <input value={form.displayName} onChange={set('displayName')} placeholder="Tom" maxLength={30} />
             </label>
           </>
         )}
         <label className="field">
-          <span>Email</span>
+          <span>{t('field.email')}</span>
           <input type="email" value={form.email} onChange={set('email')} autoComplete="email" placeholder="you@example.com" required />
         </label>
         <label className="field">
-          <span>Password</span>
-          <input type="password" value={form.password} onChange={set('password')} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} placeholder={mode === 'login' ? '••••••' : 'At least 6 characters'} required />
+          <span>{t('field.password')}</span>
+          <input type="password" value={form.password} onChange={set('password')} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} placeholder={mode === 'login' ? '••••••' : t('auth.passwordHint')} required />
         </label>
         {mode === 'register' && (
-          <div className="guidelines">
-            <h3>🐾 Respect the cats</h3>
-            <ul>{GUIDELINES.map(([i, t]) => <li key={t}><span>{i}</span>{t}</li>)}</ul>
+          <Guidelines>
             <label className="check">
               <input type="checkbox" checked={form.acceptGuidelines} onChange={set('acceptGuidelines')} />
-              <span>I promise to hunt with my camera only.</span>
+              <span>{t('guide.promise')}</span>
             </label>
-          </div>
+          </Guidelines>
         )}
         {error && <p className="form-error" role="alert">{error}</p>}
         <button className="btn btn-primary btn-lg btn-block" disabled={busy}>
-          {busy ? 'One moment…' : mode === 'login' ? 'Log in' : 'Create account'}
+          {busy ? t('common.oneMoment') : mode === 'login' ? t('auth.login') : t('auth.create')}
         </button>
       </form>
       <p className="center muted">
-        {mode === 'login' ? 'New here? ' : 'Already a hunter? '}
+        {mode === 'login' ? t('auth.newHere') : t('auth.already')}{' '}
         <button className="btn btn-link" onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(null); }}>
-          {mode === 'login' ? 'Create an account' : 'Log in'}
+          {mode === 'login' ? t('auth.createLink') : t('auth.login')}
         </button>
       </p>
     </main>

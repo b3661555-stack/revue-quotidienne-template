@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
+import { useT } from '../i18n/index.jsx';
 
 export const TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 export const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
@@ -7,6 +8,7 @@ export const TILE_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyrigh
 /** Small static map showing a cat's approximate area as a soft circle, never a pin on a house. */
 export default function MiniMap({ lat, lng, color = '#ff6b3d', radius = 250 }) {
   const el = useRef(null);
+  const t = useT();
   const [tilesFailed, setTilesFailed] = useState(false);
   useEffect(() => {
     if (!el.current || lat == null) return undefined;
@@ -22,7 +24,7 @@ export default function MiniMap({ lat, lng, color = '#ff6b3d', radius = 250 }) {
   return (
     <div className="minimap-wrap">
       <div ref={el} className="minimap" />
-      {tilesFailed && <div className="map-fallback small">Map preview unavailable offline</div>}
+      {tilesFailed && <div className="map-fallback small">{t('map.previewUnavailable')}</div>}
     </div>
   );
 }

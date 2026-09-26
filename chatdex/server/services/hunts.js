@@ -24,13 +24,13 @@ export function updateHuntsFor(userId, at, isDemo = 0) {
     if (!h.completed_at && progress >= h.goal) {
       justCompleted = true;
       run('UPDATE hunts SET completed_at = ? WHERE id = ?', at, h.id);
-      addEvent({ type: 'hunt_completed', userId, huntId: h.id, data: { title: h.title, goal: h.goal }, isDemo, at });
+      addEvent({ type: 'hunt_completed', userId, huntId: h.id, data: { title: h.title, region: h.region, goal: h.goal }, isDemo, at });
       for (const p of all('SELECT user_id FROM hunt_participants WHERE hunt_id = ?', h.id)) {
         awardXp(p.user_id, XP.huntComplete, at, isDemo);
-        notify({ userId: p.user_id, type: 'hunt_completed', huntId: h.id, text: `🏹 Hunt complete: ${h.title}! +${XP.huntComplete} XP`, at });
+        notify({ userId: p.user_id, type: 'hunt_completed', huntId: h.id, text: `🏹 Hunt complete: ${h.title || `Cat Hunt: ${h.region}`}! +${XP.huntComplete} XP`, data: { title: h.title, region: h.region, xp: XP.huntComplete }, at });
         evaluateAchievements(p.user_id, at, isDemo);
       }
     }
-    return { huntId: h.id, title: h.title, progress, goal: h.goal, completed: !!(h.completed_at || justCompleted), justCompleted };
+    return { huntId: h.id, title: h.title, region: h.region, progress, goal: h.goal, completed: !!(h.completed_at || justCompleted), justCompleted };
   });
 }

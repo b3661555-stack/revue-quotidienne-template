@@ -32,6 +32,14 @@ export function miniUser(row, p = 'u_') {
 export const MINI_USER_COLS = (alias, p = 'u_') =>
   `${alias}.id AS ${p}id, ${alias}.username AS ${p}username, ${alias}.display_name AS ${p}display_name, ${alias}.avatar_emoji AS ${p}avatar_emoji, ${alias}.avatar_color AS ${p}avatar_color`;
 
+/** Community fame, derived from real counts. Clients localize via `legend.kind`. */
+export function legendInfo(cat) {
+  const wild = cat.region?.startsWith('Wild zone');
+  if (cat.hunter_count >= 10) return { kind: 'legend', region: wild ? null : cat.region };
+  if (cat.observation_count >= 25) return { kind: 'celebrity', region: cat.region };
+  return null;
+}
+
 export function legendTitle(cat) {
   if (cat.hunter_count >= 10) return `👑 Legend of ${cat.region?.startsWith('Wild zone') ? 'the wild' : cat.region}`;
   if (cat.observation_count >= 25) return `🔥 ${cat.region} celebrity`;
@@ -63,6 +71,7 @@ export function catSummary(cat, collectedSet) {
     daysSinceSeen,
     status: daysSinceSeen >= config.missingAfterDays ? 'missing' : 'active',
     legendTitle: legendTitle(cat),
+    legend: legendInfo(cat),
     isDemo: !!cat.is_demo,
     collected: collectedSet ? collectedSet.has(cat.id) : undefined,
   };

@@ -54,10 +54,11 @@ export function addEvent({ type, userId, catId = null, observationId = null, hun
   );
 }
 
-export function notify({ userId, type, text, actorId = null, catId = null, huntId = null, at }) {
+/** `text` is the English fallback; clients render `type` + `data` in the viewer's language. */
+export function notify({ userId, type, text, data = {}, actorId = null, catId = null, huntId = null, at }) {
   run(
-    `INSERT INTO notifications (user_id, type, actor_id, cat_id, hunt_id, text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    userId, type, actorId, catId, huntId, text, at
+    `INSERT INTO notifications (user_id, type, actor_id, cat_id, hunt_id, text, data, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    userId, type, actorId, catId, huntId, text, JSON.stringify(data), at
   );
 }
 
@@ -69,7 +70,7 @@ export function awardXp(userId, amount, at, isDemo = 0) {
   run('UPDATE users SET xp = xp + ? WHERE id = ?', amount, userId);
   if (after > before) {
     addEvent({ type: 'level_up', userId, data: { level: after }, isDemo, at });
-    notify({ userId, type: 'level_up', text: `Level up! You reached level ${after}.`, at });
+    notify({ userId, type: 'level_up', text: `Level up! You reached level ${after}.`, data: { level: after }, at });
   }
   return { before, after };
 }
@@ -83,7 +84,7 @@ export function evaluateAchievements(userId, at, isDemo = 0) {
     if (owned.has(a.id) || !a.check(stats)) continue;
     run('INSERT INTO user_achievements (user_id, achievement_id, unlocked_at) VALUES (?, ?, ?)', userId, a.id, at);
     addEvent({ type: 'achievement', userId, data: { id: a.id, name: a.name, icon: a.icon }, isDemo, at });
-    notify({ userId, type: 'achievement', text: `${a.icon} Badge unlocked: ${a.name}`, at });
+    notify({ userId, type: 'achievement', text: `${a.icon} Badge unlocked: ${a.name}`, data: { id: a.id, icon: a.icon }, at });
     unlocked.push({ id: a.id, name: a.name, icon: a.icon, description: a.description });
   }
   return unlocked;

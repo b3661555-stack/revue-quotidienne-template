@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { BookOpen, Camera, ChevronLeft, Compass, House, User, WifiOff, X } from 'lucide-react';
 import { catSvg } from '../lib/catArt.js';
 import { useApp } from '../store.jsx';
+import { errorText, useT } from '../i18n/index.jsx';
 
 export const RARITY = {
   common: { label: 'Common', icon: '🟢', color: '#3fb86b' },
@@ -50,21 +51,23 @@ export function UserLink({ user, children }) {
 }
 
 export function RarityBadge({ rarity, small = false }) {
+  const t = useT();
   const r = RARITY[rarity] || RARITY.common;
   return (
     <span className={`rarity ${small ? 'rarity-sm' : ''} rarity-${rarity}`} style={{ '--rc': r.color }}>
-      <span aria-hidden>{r.icon}</span> {r.label}
+      <span aria-hidden>{r.icon}</span> {t.rarity(rarity)}
     </span>
   );
 }
 
 export function LevelBar({ user, compact = false }) {
+  const t = useT();
   const pct = Math.min(100, Math.round((user.levelXp / user.levelSpan) * 100));
   return (
     <div className={`levelbar ${compact ? 'levelbar-compact' : ''}`}>
       <div className="levelbar-top">
-        <span className="levelbar-level">Lv {user.level}</span>
-        <span className="muted small">{user.levelXp} / {user.levelSpan} XP</span>
+        <span className="levelbar-level">{t('level.short', { level: user.level })}</span>
+        <span className="muted small">{t('level.xp', { xp: t.number(user.levelXp), span: t.number(user.levelSpan) })}</span>
       </div>
       <div className="bar"><div className="bar-fill" style={{ width: `${pct}%` }} /></div>
     </div>
@@ -97,12 +100,13 @@ export function EmptyState({ icon = '🐈', title, text, action }) {
 }
 
 export function ErrorState({ error, onRetry }) {
+  const t = useT();
   return (
     <EmptyState
       icon={error?.offline ? '📡' : '🙀'}
-      title={error?.offline ? "You're offline" : 'Something went wrong'}
-      text={error?.message}
-      action={onRetry && <button className="btn btn-primary" onClick={() => onRetry()}>Try again</button>}
+      title={error?.offline ? t('errors.offlineTitle') : t('errors.genericTitle')}
+      text={errorText(t, error)}
+      action={onRetry && <button className="btn btn-primary" onClick={() => onRetry()}>{t('common.tryAgain')}</button>}
     />
   );
 }
@@ -113,11 +117,12 @@ export function Page({ children, className = '' }) {
 
 export function TopBar({ title, back = false, right, transparent = false }) {
   const navigate = useNavigate();
+  const t = useT();
   return (
     <header className={`topbar ${transparent ? 'topbar-transparent' : ''}`}>
       {back ? (
-        <button className="icon-btn" aria-label="Back" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}>
-          <ChevronLeft size={22} />
+        <button className="icon-btn" aria-label={t('common.back')} onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/'))}>
+          <ChevronLeft size={22} className="flip-rtl" />
         </button>
       ) : <span className="topbar-spacer" />}
       <h1 className="topbar-title">{title}</h1>
@@ -127,6 +132,7 @@ export function TopBar({ title, back = false, right, transparent = false }) {
 }
 
 export function Sheet({ open, onClose, title, children }) {
+  const t = useT();
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => e.key === 'Escape' && onClose();
@@ -140,7 +146,7 @@ export function Sheet({ open, onClose, title, children }) {
         <div className="sheet-handle" />
         <div className="sheet-head">
           <h2>{title}</h2>
-          <button className="icon-btn" onClick={onClose} aria-label="Close"><X size={20} /></button>
+          <button className="icon-btn" onClick={onClose} aria-label={t('common.close')}><X size={20} /></button>
         </div>
         <div className="sheet-body">{children}</div>
       </div>
@@ -149,6 +155,7 @@ export function Sheet({ open, onClose, title, children }) {
 }
 
 export function BottomNav() {
+  const t = useT();
   const tab = (to, Icon, label, end) => (
     <NavLink to={to} end={end} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
       <Icon size={22} strokeWidth={2.2} />
@@ -157,14 +164,14 @@ export function BottomNav() {
   );
   return (
     <nav className="bottom-nav" aria-label="Main">
-      {tab('/', House, 'Home', true)}
-      {tab('/explore', Compass, 'Explore')}
-      <NavLink to="/capture" className="nav-capture" aria-label="Capture a cat">
+      {tab('/', House, t('nav.home'), true)}
+      {tab('/explore', Compass, t('nav.explore'))}
+      <NavLink to="/capture" className="nav-capture" aria-label={t('nav.captureLabel')}>
         <span className="nav-capture-btn"><Camera size={28} strokeWidth={2.4} /></span>
-        <span className="nav-capture-label">Capture</span>
+        <span className="nav-capture-label">{t('nav.capture')}</span>
       </NavLink>
-      {tab('/dex', BookOpen, 'Chatdex')}
-      {tab('/me', User, 'Profile')}
+      {tab('/dex', BookOpen, t('nav.dex'))}
+      {tab('/me', User, t('nav.profile'))}
     </nav>
   );
 }
@@ -180,9 +187,10 @@ export function Toasts() {
 
 export function OfflineBanner() {
   const { online } = useApp();
+  const t = useT();
   if (online) return null;
   return (
-    <div className="offline-banner"><WifiOff size={16} /> You're offline. Captures and updates need a connection.</div>
+    <div className="offline-banner"><WifiOff size={16} /> {t('offline.banner')}</div>
   );
 }
 

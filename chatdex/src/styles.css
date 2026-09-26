@@ -571,3 +571,16 @@ select { padding: 9px 12px; font-size: 14px; }
   .emoji-grid { grid-template-columns: repeat(6, 1fr); }
 }
 .map-wrap > .map-fallback { top: 62px; right: 60px; }
+
+/* ------------------------------------------------------------ i18n */
+.lang-select { display: inline-flex; align-items: center; gap: 6px; font-weight: 800; font-size: 14px; }
+.lang-select select { padding: 7px 10px; border-radius: 999px; }
+.welcome-lang { align-self: flex-end; }
+[dir='rtl'] .flip-rtl { transform: scaleX(-1); }
+[dir='rtl'] .avatar-stack > * { margin-left: 0; margin-right: -8px; }
+[dir='rtl'] .avatar-stack > *:first-child { margin-right: 0; }
+[dir='rtl'] .notif.unread { box-shadow: var(--shadow), inset -4px 0 0 var(--primary); }
+[dir='rtl'] .card-cta svg:last-child { transform: scaleX(-1); }
+.leaflet-container { direction: ltr; }
+:lang(ar), :lang(hi), :lang(bn), :lang(zh), :lang(ja), :lang(ko) { --font: 'Nunito Variable', system-ui, -apple-system, 'Segoe UI', 'Noto Sans', 'Noto Sans Arabic', 'Noto Sans Devanagari', 'Noto Sans Bengali', 'PingFang SC', 'Hiragino Sans', 'Apple SD Gothic Neo', 'Microsoft YaHei', sans-serif; }
+:lang(ar) .upper, :lang(zh) .upper, :lang(ja) .upper, :lang(ko) .upper, :lang(hi) .upper, :lang(bn) .upper { text-transform: none; }

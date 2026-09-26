@@ -25,8 +25,8 @@ On a phone on the same network, open `http://<your-computer-ip>:3000`. Geolocati
 | `npm run dev` | Dev server (Express API + Vite with hot reload) on one port |
 | `npm run build` | Build the frontend into `dist/` |
 | `npm start` | Production server (serves `dist/` + API). Run `npm run build` first |
-| `npm test` | API integration tests (node:test, throwaway DB) |
-| `npm run test:e2e` | Builds, starts a server and runs the main user journeys in headless Chromium |
+| `npm test` | API integration tests (node:test, throwaway DB) + translation consistency checks |
+| `npm run test:e2e` | Builds, starts a server and runs the main user journeys in headless Chromium, including every language and Arabic RTL |
 | `npm run seed` | Seed demo data if absent |
 | `npm run db:reset` | Wipe the database and uploads, then reseed |
 | `npm run demo:clear` | Delete every demo row (users, cats, hunts), keep real accounts |
@@ -102,6 +102,16 @@ Users never own cats. They own their observations; a cat's collection is the set
 
 To plug in a real model, keep `findCandidates(input) → [{ catId, score, reasons }]` and replace the scoring with image embeddings or a vision API. `match_feedback` gives labelled pairs for evaluation.
 
+### Languages
+
+The interface is available in 15 languages: English, Français, Deutsch, Italiano, Español, Português, Русский, Türkçe, العربية (right-to-left), हिन्दी, বাংলা, 中文（简体）, 日本語, 한국어 and Bahasa Indonesia.
+
+- The language follows the browser/phone setting on first visit and can be changed from the welcome screen or **Profile → ⚙️ → Language** (remembered on the device).
+- `src/i18n/index.jsx` is a ~100-line i18n layer: flat dictionaries in `src/i18n/locales/*.js`, `{placeholder}` interpolation (including React elements), CLDR plurals and ordinals via `Intl.PluralRules`, relative times and dates via `Intl`. Only English is in the main bundle; other languages are loaded on demand.
+- The server stays language-neutral: API errors return a stable `code` + `params` (English `error` text kept as fallback, catalogue in `server/errors.js`), notifications store `type` + `data`, XP lines carry a `key`, and game vocabulary (rarities, coat colours, badges, titles) is sent as ids.
+- User content (cat names, bios, custom tags) is never translated.
+- **Adding a language:** copy `en.js` to `<code>.js`, translate the values, add the code to `LANGUAGES` in `src/i18n/index.jsx`, then run `npm test`. `tests/i18n.test.js` checks every locale for missing/extra keys, placeholders and valid plural categories.
+
 ### Rarity
 
 Deterministic, based on how unusual the visual combination is (coat + pattern + eye points), never on the animal's "worth": Common → Uncommon → Rare → Epic → Legendary. About 1 cat in 40 is ✨ Shiny, decided by the cat's random seed at registration.
@@ -126,6 +136,7 @@ Deterministic, based on how unusual the visual combination is (coat + pattern + 
 - XP & levels with titles, 15 badges with progress, in-app notifications
 - Cat Hunts: create (area, duration, goal), join/leave, live countdown and progress ring, completion bonus
 - Error handling: offline banner, failed upload with retry keeping the capture, invalid photo, location denied (town picker), camera fallback to gallery, detector unavailable, map tiles unavailable, empty states everywhere
+- 15 interface languages with automatic detection, a language switcher and right-to-left layout for Arabic
 - Demo mode with clearly flagged demo data and procedural cat portraits (no copyrighted assets)
 
 ## Deferred on purpose

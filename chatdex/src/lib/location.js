@@ -3,7 +3,7 @@ const KEY = 'chatdex.area';
 
 export function getPosition({ timeout = 10000 } = {}) {
   return new Promise((resolve, reject) => {
-    if (!('geolocation' in navigator)) return reject(Object.assign(new Error('Location is not available on this device.'), { code: 'unavailable' }));
+    if (!('geolocation' in navigator)) return reject(Object.assign(new Error('unavailable'), { code: 'unavailable' }));
     navigator.geolocation.getCurrentPosition(
       (p) => {
         const pos = { lat: p.coords.latitude, lng: p.coords.longitude, source: 'gps' };
@@ -12,8 +12,7 @@ export function getPosition({ timeout = 10000 } = {}) {
       },
       (err) => {
         const code = err.code === 1 ? 'denied' : err.code === 3 ? 'timeout' : 'unavailable';
-        const msg = code === 'denied' ? 'Location permission is off.' : code === 'timeout' ? 'Finding your location took too long.' : "We couldn't find your location.";
-        reject(Object.assign(new Error(msg), { code }));
+        reject(Object.assign(new Error(code), { code }));
       },
       { enableHighAccuracy: false, timeout, maximumAge: 120000 }
     );

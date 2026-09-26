@@ -63,7 +63,11 @@ describe('Chatdex API', () => {
 
   test('registration validates input', async () => {
     const c = client();
-    assert.equal((await c('/auth/register', { method: 'POST', body: { email: 'bad', password: 'secret123', username: 'xx1', acceptGuidelines: true } })).status, 400);
+    const bad = await c('/auth/register', { method: 'POST', body: { email: 'bad', password: 'secret123', username: 'xx1', acceptGuidelines: true } });
+    assert.equal(bad.status, 400);
+    assert.equal(bad.data.code, 'emailInvalid'); // clients translate by code
+    const short = await c('/auth/register', { method: 'POST', body: { email: 'a@b.co', password: 'secret123', username: 'ab', acceptGuidelines: true } });
+    assert.deepEqual([short.data.code, short.data.params], ['fieldTooShort', { field: 'username', min: 3 }]);
     assert.equal((await c('/auth/register', { method: 'POST', body: { email: 'a@b.co', password: '123', username: 'abc', acceptGuidelines: true } })).status, 400);
     assert.equal((await c('/auth/register', { method: 'POST', body: { email: 'a@b.co', password: 'secret123', username: 'abc' } })).status, 400);
   });
@@ -134,7 +138,8 @@ describe('Chatdex API', () => {
     assert.equal(cat.data.firstCatcher.username, 'sarah');
     assert.equal(cat.data.observations.length, 2);
     const n = await sarah('/notifications');
-    assert.ok(n.data.items.some((x) => x.type === 'first_catch_found'));
+    const fc = n.data.items.find((x) => x.type === 'first_catch_found');
+    assert.deepEqual(fc.data, { cat: 'Milo', rank: 2, user: 'Tom' }); // language-neutral payload
     assert.equal(dbGet('SELECT COUNT(*) AS n FROM match_feedback').n, 1);
 
     const again = await capture(tom, { catId: miloId });

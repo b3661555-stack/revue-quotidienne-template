@@ -195,13 +195,13 @@ export function refreshDemoHunt() {
   const lausanne = REGIONS.find((r) => r.name === 'Lausanne');
   const res = run(
     `INSERT INTO hunts (title, creator_id, region, lat, lng, goal, starts_at, ends_at, is_demo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
-    'Cat Hunt: Lausanne', sarah.id, 'Lausanne', lausanne.lat, lausanne.lng, 10, iso, new Date(now + 6 * 3600000).toISOString(), iso
+    '', sarah.id, 'Lausanne', lausanne.lat, lausanne.lng, 10, iso, new Date(now + 6 * 3600000).toISOString(), iso
   );
   const huntId = Number(res.lastInsertRowid);
   for (const u of all(`SELECT id FROM users WHERE is_demo = 1 AND username IN ('sarah', 'lucas', 'emma', 'lea')`)) {
     run('INSERT OR IGNORE INTO hunt_participants (hunt_id, user_id, joined_at) VALUES (?, ?, ?)', huntId, u.id, iso);
   }
-  addEvent({ type: 'hunt_created', userId: sarah.id, huntId, data: { title: 'Cat Hunt: Lausanne', region: 'Lausanne', goal: 10, durationMin: 360 }, isDemo: 1, at: iso });
+  addEvent({ type: 'hunt_created', userId: sarah.id, huntId, data: { title: '', region: 'Lausanne', goal: 10, durationMin: 360 }, isDemo: 1, at: iso });
 }
 
 export function clearDemo() {

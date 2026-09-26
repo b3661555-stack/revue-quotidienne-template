@@ -14,7 +14,7 @@
     "seed": "node --disable-warning=ExperimentalWarning server/seed.js",
     "db:reset": "node --disable-warning=ExperimentalWarning server/seed.js --reset",
     "demo:clear": "node --disable-warning=ExperimentalWarning server/seed.js --clear-demo",
-    "test": "node --disable-warning=ExperimentalWarning --test tests/api.test.js",
+    "test": "node --disable-warning=ExperimentalWarning --test tests/api.test.js tests/i18n.test.js",
     "test:e2e": "node --disable-warning=ExperimentalWarning tests/e2e.mjs"
   },
   "dependencies": {

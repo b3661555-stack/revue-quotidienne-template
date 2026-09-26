@@ -8,7 +8,9 @@ import { GUIDELINES } from './Welcome.jsx';
 import { drawToCanvas, fingerprint, guessCoatColor, loadImage, thumbnail, toJpeg } from '../lib/image.js';
 import { detectCats, loadDetector } from '../lib/detector.js';
 import { distanceKm, getPosition, saveArea, savedArea } from '../lib/location.js';
-import { ordinal, plural, randomCatName, timeAgo } from '../lib/format.js';
+import { randomCatName } from '../lib/format.js';
+import { errorText, useT } from '../i18n/index.jsx';
+import { huntTitle } from '../components/social.jsx';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -29,13 +31,14 @@ function useLocation() {
 }
 
 function AreaSheet({ open, onClose, onPick, onRetryGps, regions }) {
+  const t = useT();
   const [q, setQ] = useState('');
   const list = useMemo(() => regions.filter((r) => r.name.toLowerCase().includes(q.toLowerCase())), [regions, q]);
   return (
-    <Sheet open={open} onClose={onClose} title="Where are you?">
-      <p className="muted small">We only use an approximate area (never an exact address).</p>
-      <button className="btn btn-ghost btn-block" onClick={onRetryGps}><LocateFixed size={18} /> Use my location</button>
-      <div className="search-field mt"><Search size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search a town" aria-label="Search a town" /></div>
+    <Sheet open={open} onClose={onClose} title={t('area.title')}>
+      <p className="muted small">{t('area.approx')}</p>
+      <button className="btn btn-ghost btn-block" onClick={onRetryGps}><LocateFixed size={18} /> {t('area.useGps')}</button>
+      <div className="search-field mt"><Search size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('area.search')} aria-label={t('area.search')} /></div>
       <div className="area-list">
         {list.map((r) => <button key={r.name} className="menu-row" onClick={() => onPick(r)}><MapPin size={16} /> {r.name}</button>)}
       </div>
@@ -44,6 +47,7 @@ function AreaSheet({ open, onClose, onPick, onRetryGps, regions }) {
 }
 
 function PickCatSheet({ open, onClose, pos, onPick }) {
+  const t = useT();
   const [cats, setCats] = useState(null);
   const [q, setQ] = useState('');
   useEffect(() => {
@@ -58,15 +62,15 @@ function PickCatSheet({ open, onClose, pos, onPick }) {
   }, [open, cats, pos]);
   const list = (cats || []).filter((c) => c.name.toLowerCase().includes(q.toLowerCase())).slice(0, 60);
   return (
-    <Sheet open={open} onClose={onClose} title="Which cat is it?">
-      <div className="search-field"><Search size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name" aria-label="Search by name" /></div>
+    <Sheet open={open} onClose={onClose} title={t('pick.title')}>
+      <div className="search-field"><Search size={16} /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('pick.search')} aria-label={t('pick.search')} /></div>
       {!cats && <Spinner />}
-      {cats && !list.length && <p className="muted center mt">No registered cats nearby. It's probably a new one!</p>}
+      {cats && !list.length && <p className="muted center mt">{t('pick.none')}</p>}
       <div className="pick-list">
         {list.map((c) => (
           <button key={c.id} className="pick-row" onClick={() => onPick(c)}>
             <CatImage cat={c} thumb={c.thumb} className="pick-img" />
-            <span className="grow"><strong>{c.name}</strong><span className="muted small block">{c.region} · {c.d ? `${c.d.toFixed(1)} km` : ''} · seen {timeAgo(c.lastObservedAt)}</span></span>
+            <span className="grow"><strong>{c.name}</strong><span className="muted small block">{t.region(c.region)} · {c.d ? `${c.d.toFixed(1)} km` : ''} · {t('cat.seen', { when: t.timeAgo(c.lastObservedAt) })}</span></span>
             <RarityBadge rarity={c.rarity} small />
           </button>
         ))}
@@ -77,6 +81,7 @@ function PickCatSheet({ open, onClose, pos, onPick }) {
 
 function Reward({ result, onAgain }) {
   const navigate = useNavigate();
+  const t = useT();
   const { cat } = result;
   const [shown, setShown] = useState(0);
   const lines = result.xp;
@@ -87,47 +92,47 @@ function Reward({ result, onAgain }) {
   }, [shown, lines.length]);
   const r = RARITY[cat.rarity];
   const headline = result.isNewCat
-    ? { kicker: cat.rarity === 'shiny' ? '✨ SHINY DISCOVERY! ✨' : 'NEW CAT DISCOVERED', emoji: '🎉' }
+    ? { kicker: cat.rarity === 'shiny' ? `✨ ${t('reward.shiny')} ✨` : t('reward.newCat'), emoji: '🎉' }
     : result.respotted
-      ? { kicker: `${cat.name.toUpperCase()} HAS BEEN SPOTTED AGAIN!`, emoji: '🚨' }
+      ? { kicker: t('reward.respotted', { name: cat.name }), emoji: '🚨' }
       : result.firstForUser
-        ? { kicker: 'ADDED TO YOUR CHATDEX', emoji: '🐾' }
-        : { kicker: `YOU FOUND ${cat.name.toUpperCase()} AGAIN`, emoji: '🐾' };
+        ? { kicker: t('reward.added'), emoji: '🐾' }
+        : { kicker: t('reward.foundAgain', { name: cat.name }), emoji: '🐾' };
   return (
     <div className={`reward rarity-bg-${cat.rarity}`} style={{ '--rc': r.color }}>
       {(result.isNewCat || result.levelAfter > result.levelBefore || result.respotted) && <Confetti count={result.isNewCat ? 60 : 36} />}
-      <p className="reward-kicker">{headline.emoji} {headline.kicker}</p>
+      <p className="reward-kicker upper">{headline.emoji} {headline.kicker}</p>
       <div className="reward-card">
         <div className="reward-glow" />
         <CatImage cat={cat} photo={cat.photo} thumb={cat.thumb} full className="reward-img" />
-        {result.isFirstCatch && <div className="ribbon">👑 FIRST CATCH</div>}
+        {result.isFirstCatch && <div className="ribbon upper">👑 {t('cat.firstCatch')}</div>}
       </div>
       <h1 className="reward-name">{cat.name}</h1>
       <div className="reward-rarity"><RarityBadge rarity={cat.rarity} /></div>
       {!result.isNewCat && result.firstForUser && result.hunterRank && (
-        <p className="reward-sub">You are the <strong>{ordinal(result.hunterRank)}</strong> hunter to observe {cat.name}.</p>
+        <p className="reward-sub">{t('reward.hunterRank', { nth: <strong>{t.ordinal(result.hunterRank)}</strong>, name: cat.name })}</p>
       )}
-      {result.respotted && <p className="reward-sub">Nobody had seen {cat.name} for {result.daysMissing} days. Nice detective work!</p>}
-      {result.isNewCat && <p className="reward-sub">Nobody has registered this cat before. It's officially your First Catch.</p>}
+      {result.respotted && <p className="reward-sub">{t('reward.respottedSub', { name: cat.name, count: result.daysMissing })}</p>}
+      {result.isNewCat && <p className="reward-sub">{t('reward.newSub')}</p>}
       <div className="xp-lines">
         {lines.slice(0, Math.max(0, shown - 1)).map((l, i) => (
-          <div key={i} className="xp-line"><span>{l.label}</span><strong>+{l.xp} XP</strong></div>
+          <div key={i} className="xp-line"><span>{l.key ? t(`xp.${l.key}`, { ...l.params, rarity: l.params?.rarity && t.rarity(l.params.rarity), region: l.params?.region && t.region(l.params.region) }) : l.label}</span><strong>{t('xp.amount', { xp: l.xp })}</strong></div>
         ))}
-        {shown > lines.length && <div className="xp-total">+{result.xpTotal} XP</div>}
+        {shown > lines.length && <div className="xp-total">{t('xp.amount', { xp: result.xpTotal })}</div>}
       </div>
       {shown > lines.length + 1 && result.levelAfter > result.levelBefore && (
-        <div className="levelup">⬆️ Level up! You're now level {result.levelAfter}</div>
+        <div className="levelup">⬆️ {t('reward.levelUp', { level: result.levelAfter })}</div>
       )}
       {shown > lines.length + 1 && result.achievements.map((a) => (
-        <div key={a.id} className="badge-unlock"><span className="badge-unlock-icon">{a.icon}</span><span><strong>Badge unlocked: {a.name}</strong><span className="small block">{a.description}</span></span></div>
+        <div key={a.id} className="badge-unlock"><span className="badge-unlock-icon">{a.icon}</span><span><strong>{t('reward.badge', { name: t(`ach.${a.id}.name`) })}</strong><span className="small block">{t(`ach.${a.id}.desc`)}</span></span></div>
       ))}
       {shown > lines.length + 1 && result.hunts.map((h) => (
-        <div key={h.huntId} className="hunt-line">🏹 {h.title}: {h.progress}/{h.goal} cats {h.justCompleted ? '· COMPLETE! 🎯' : ''}</div>
+        <div key={h.huntId} className="hunt-line">🏹 {huntTitle(t, h)}: {t('hunt.progressCats', { progress: h.progress, goal: h.goal })} {h.justCompleted ? `· ${t('reward.huntComplete')} 🎯` : ''}</div>
       ))}
       <div className="reward-actions">
-        <button className="btn btn-primary btn-lg btn-block" onClick={() => navigate(`/cat/${cat.id}`)}>See {cat.name}'s profile</button>
-        <button className="btn btn-ghost btn-block" onClick={onAgain}><Camera size={18} /> Capture another cat</button>
-        <Link className="btn btn-link" to="/">Back home</Link>
+        <button className="btn btn-primary btn-lg btn-block" onClick={() => navigate(`/cat/${cat.id}`)}>{t('reward.seeProfile', { name: cat.name })}</button>
+        <button className="btn btn-ghost btn-block" onClick={onAgain}><Camera size={18} /> {t('reward.another')}</button>
+        <Link className="btn btn-link" to="/">{t('reward.home')}</Link>
       </div>
     </div>
   );
@@ -135,6 +140,7 @@ function Reward({ result, onAgain }) {
 
 export default function Capture() {
   const { meta, setMe, toast, online } = useApp();
+  const t = useT();
   const navigate = useNavigate();
   const [loc, setLoc, locate] = useLocation();
   const [step, setStep] = useState('start');
@@ -199,7 +205,7 @@ export default function Capture() {
         setStep('confirm');
       }
     } catch (err) {
-      setError(err.message || 'This photo could not be processed.');
+      setError(err.photoCode ? t(`photo.${err.photoCode}`) : t('photo.unreadable'));
       setStep('start');
     }
   };
@@ -215,7 +221,7 @@ export default function Capture() {
       setStep(res.candidates.length ? 'candidates' : 'name');
     } catch (err) {
       // Identification failed: continue as a new cat, the user can still pick an existing one manually.
-      toast(err.offline ? err.message : "Couldn't check for known cats. You can still add it.", 'error');
+      toast(err.offline ? t('errors.offline') : t('capture.matchFailed'), 'error');
       setCandidates([]);
       setStep('name');
     }
@@ -252,7 +258,7 @@ export default function Capture() {
       setResult(res);
       setStep('reward');
     } catch (err) {
-      setError(err.message);
+      setError(errorText(t, err));
       setStep('saveError');
     }
   };
@@ -266,10 +272,10 @@ export default function Capture() {
   const locationPill = (
     <button className={`loc-pill loc-${loc.status}`} onClick={() => setAreaOpen(true)}>
       <MapPin size={14} />
-      {loc.status === 'locating' && 'Finding your area…'}
-      {loc.status === 'ok' && 'Location on (approximate)'}
-      {loc.status === 'manual' && `Near ${loc.pos?.name || 'chosen area'}`}
-      {['denied', 'unavailable', 'timeout'].includes(loc.status) && 'Location off · choose your area'}
+      {loc.status === 'locating' && t('loc.finding')}
+      {loc.status === 'ok' && t('loc.on')}
+      {loc.status === 'manual' && (loc.pos?.name ? t('loc.near', { place: loc.pos.name }) : t('loc.chosen'))}
+      {['denied', 'unavailable', 'timeout'].includes(loc.status) && t('loc.off')}
     </button>
   );
 
@@ -294,7 +300,7 @@ export default function Capture() {
   return (
     <main className="page capture-page">
       <header className="capture-top">
-        <button className="icon-btn" onClick={() => navigate(-1)} aria-label="Close"><X size={22} /></button>
+        <button className="icon-btn" onClick={() => navigate(-1)} aria-label={t('common.close')}><X size={22} /></button>
         {locationPill}
         <span className="topbar-spacer" />
       </header>
@@ -303,26 +309,26 @@ export default function Capture() {
 
       {step === 'start' && (
         <div className="capture-start">
-          <button className="viewfinder" onClick={() => cameraInput.current.click()} aria-label="Take a photo">
+          <button className="viewfinder" onClick={() => cameraInput.current.click()} aria-label={t('capture.takePhoto')}>
             <span className="vf-corner tl" /><span className="vf-corner tr" /><span className="vf-corner bl" /><span className="vf-corner br" />
             <span className="vf-emoji">🐈</span>
-            <span className="vf-text">Saw a cat?</span>
-            <span className="muted small">Snap it from a respectful distance</span>
+            <span className="vf-text">{t('capture.sawCat')}</span>
+            <span className="muted small">{t('capture.snapDistance')}</span>
           </button>
           {error && <p className="form-error" role="alert">{error}</p>}
-          {!online && <p className="form-error">You're offline. You can take the photo now, but you'll need a connection to save it.</p>}
-          <button className="shutter" onClick={() => cameraInput.current.click()} aria-label="Take photo"><Camera size={34} /></button>
-          <button className="btn btn-ghost" onClick={() => galleryInput.current.click()}><ImagePlus size={18} /> Upload from gallery</button>
-          <p className="muted small center">Camera blocked? Allow camera access in your browser settings, or upload a photo instead.</p>
-          <div className="tip"><span>{tip[0]}</span> {tip[1]}</div>
+          {!online && <p className="form-error">{t('capture.offline')}</p>}
+          <button className="shutter" onClick={() => cameraInput.current.click()} aria-label={t('capture.takePhoto')}><Camera size={34} /></button>
+          <button className="btn btn-ghost" onClick={() => galleryInput.current.click()}><ImagePlus size={18} /> {t('capture.gallery')}</button>
+          <p className="muted small center">{t('capture.cameraBlocked')}</p>
+          <div className="tip"><span>{tip[0]}</span> {t(tip[1])}</div>
         </div>
       )}
 
-      {step === 'processing' && <div className="capture-center"><Spinner label="Looking for a cat…" /></div>}
+      {step === 'processing' && <div className="capture-center"><Spinner label={t('capture.looking')} /></div>}
 
       {photo && !['start', 'processing'].includes(step) && (
         <div className={`capture-photo ${step === 'detected' ? 'is-detected' : ''} ${['describe', 'candidates', 'name', 'matching', 'saving', 'saveError'].includes(step) ? 'small' : ''}`}>
-          <img src={photo.preview} alt="Your capture" />
+          <img src={photo.preview} alt={t('capture.yourPhoto')} />
           {photo.box && step === 'detected' && (
             <div className="det-box" style={{ left: `${photo.box.x * 100}%`, top: `${photo.box.y * 100}%`, width: `${photo.box.w * 100}%`, height: `${photo.box.h * 100}%` }} />
           )}
@@ -332,111 +338,111 @@ export default function Capture() {
       {step === 'detected' && (
         <div className="capture-panel center pop">
           <div className="big-emoji">🐱</div>
-          <h2>{detect.count > 1 ? `${detect.count} cats detected!` : 'Cat detected!'}</h2>
-          <p className="muted small">{Math.round(detect.score * 100)}% sure</p>
+          <h2>{t('capture.detected', { count: detect.count })}</h2>
+          <p className="muted small">{t('capture.sure', { pct: Math.round(detect.score * 100) })}</p>
         </div>
       )}
 
       {step === 'confirm' && (
         <div className="capture-panel center">
-          <h2>{detect?.available ? "Hmm, we couldn't spot a cat" : 'Is there a cat in this photo?'}</h2>
-          <p className="muted small">{detect?.available ? 'Maybe it is hiding, far away, or just very fluffy.' : 'Automatic detection is unavailable right now, so we trust your eyes.'}</p>
+          <h2>{detect?.available ? t('capture.noCatTitle') : t('capture.isCatTitle')}</h2>
+          <p className="muted small">{detect?.available ? t('capture.noCatText') : t('capture.isCatText')}</p>
           <div className="row gap">
-            <button className="btn btn-ghost grow" onClick={() => { setStep('start'); setPhoto(null); }}><RefreshCw size={16} /> Retake</button>
-            <button className="btn btn-primary grow" onClick={() => setStep('describe')}>Yes, it's a cat 🐱</button>
+            <button className="btn btn-ghost grow" onClick={() => { setStep('start'); setPhoto(null); }}><RefreshCw size={16} /> {t('capture.retake')}</button>
+            <button className="btn btn-primary grow" onClick={() => setStep('describe')}>{t('capture.yesCat')} 🐱</button>
           </div>
         </div>
       )}
 
       {step === 'describe' && (
         <div className="capture-panel">
-          <h2>Describe this cat</h2>
-          <p className="muted small">This helps us check if someone already found it.</p>
-          <h3 className="label">Coat colour {photo.guess && <span className="hint">suggested: {meta.coatColors.find((c) => c.id === photo.guess)?.label}</span>}</h3>
+          <h2>{t('capture.describe')}</h2>
+          <p className="muted small">{t('capture.describeSub')}</p>
+          <h3 className="label">{t('attr.coat')} {photo.guess && <span className="hint">{t('capture.suggested', { value: t(`coat.${photo.guess}`) })}</span>}</h3>
           <div className="chips">
             {meta.coatColors.map((c) => (
               <Chip key={c.id} active={attrs.coatColor === c.id} onClick={() => setAttrs({ ...attrs, coatColor: c.id })}>
-                <span className="swatch" style={{ background: c.hex }} /> {c.label}
+                <span className="swatch" style={{ background: c.hex }} /> {t(`coat.${c.id}`)}
               </Chip>
             ))}
           </div>
-          <h3 className="label">Pattern</h3>
+          <h3 className="label">{t('attr.pattern')}</h3>
           <div className="chips">
-            {meta.patterns.map((p) => <Chip key={p.id} active={attrs.pattern === p.id} onClick={() => setAttrs({ ...attrs, pattern: p.id })}>{p.label}</Chip>)}
+            {meta.patterns.map((p) => <Chip key={p.id} active={attrs.pattern === p.id} onClick={() => setAttrs({ ...attrs, pattern: p.id })}>{t(`pattern.${p.id}`)}</Chip>)}
           </div>
-          <h3 className="label">Eyes</h3>
+          <h3 className="label">{t('attr.eyes')}</h3>
           <div className="chips">
-            {meta.eyeColors.map((p) => <Chip key={p.id} active={attrs.eyeColor === p.id} onClick={() => setAttrs({ ...attrs, eyeColor: p.id })}>{p.label}</Chip>)}
+            {meta.eyeColors.map((p) => <Chip key={p.id} active={attrs.eyeColor === p.id} onClick={() => setAttrs({ ...attrs, eyeColor: p.id })}>{t(`eyes.${p.id}`)}</Chip>)}
           </div>
           <label className="check mt">
             <input type="checkbox" checked={multiCat} onChange={(e) => setMultiCat(e.target.checked)} />
-            <span>Several cats in this photo (describe the main one)</span>
+            <span>{t('capture.multi')}</span>
           </label>
           <button className="btn btn-primary btn-lg btn-block mt" disabled={!attrs.coatColor || !attrs.pattern} onClick={identify}>
-            {!attrs.pattern ? 'Pick a pattern' : 'Identify'}
+            {!attrs.pattern ? t('capture.pickPattern') : t('capture.identify')}
           </button>
-          {!loc.pos && loc.status !== 'locating' && <p className="muted small center">We'll ask for your area first.</p>}
+          {!loc.pos && loc.status !== 'locating' && <p className="muted small center">{t('capture.askArea')}</p>}
         </div>
       )}
 
-      {step === 'matching' && <div className="capture-panel center"><Spinner label="Checking the Chatdex…" /></div>}
+      {step === 'matching' && <div className="capture-panel center"><Spinner label={t('capture.checking')} /></div>}
 
       {step === 'candidates' && candidates[candIdx] && (() => {
         const c = candidates[candIdx];
         return (
           <div className="capture-panel center">
-            <p className="kicker">{c.strong ? 'Looks familiar…' : 'Possible match'}</p>
-            <h2>Could this be {c.name}?</h2>
+            <p className="kicker">{c.strong ? t('match.familiar') : t('match.possible')}</p>
+            <h2>{t('match.couldBe', { name: c.name })}</h2>
             <div className="candidate">
               <CatImage cat={c} photo={c.photo} thumb={c.thumb} className="candidate-img" />
               <div className="candidate-info">
                 <RarityBadge rarity={c.rarity} small />
-                <p className="small">{c.reasons.join(' · ')}</p>
-                <p className="muted small">{plural(c.hunterCount, "hunter")} · last seen {timeAgo(c.lastObservedAt)}{c.lastSeenBy ? ` by ${c.lastSeenBy.displayName}` : ''}</p>
+                <p className="small">{c.reasons.map((r) => t(`match.reason.${r.replace(/ /g, '_')}`)).join(' · ')}</p>
+                <p className="muted small">{t('common.hunters', { count: c.hunterCount })} · {c.lastSeenBy ? t('match.lastSeenBy', { when: t.timeAgo(c.lastObservedAt), name: c.lastSeenBy.displayName }) : t('cat.lastSeen', { when: t.timeAgo(c.lastObservedAt) })}</p>
               </div>
             </div>
             <div className="answer-row">
-              <button className="btn btn-ghost" onClick={() => answer('no')}>No</button>
-              <button className="btn btn-ghost" onClick={() => answer('unsure')}>Not sure</button>
-              <button className="btn btn-primary" onClick={() => answer('yes')}>Yes!</button>
+              <button className="btn btn-ghost" onClick={() => answer('no')}>{t('match.no')}</button>
+              <button className="btn btn-ghost" onClick={() => answer('unsure')}>{t('match.unsure')}</button>
+              <button className="btn btn-primary" onClick={() => answer('yes')}>{t('match.yes')}</button>
             </div>
-            <p className="muted small">{candIdx + 1} of {candidates.length} possible matches</p>
+            <p className="muted small">{t('match.counter', { n: candIdx + 1, count: candidates.length })}</p>
           </div>
         );
       })()}
 
       {step === 'name' && (
         <div className="capture-panel">
-          <p className="kicker">{candidates.length ? 'Then it must be…' : 'Nobody has registered this cat nearby'}</p>
-          <h2>✨ A new cat! Name it</h2>
+          <p className="kicker">{candidates.length ? t('name.mustBe') : t('name.nobody')}</p>
+          <h2>✨ {t('name.title')}</h2>
           <div className="name-row">
-            <input className="name-input" value={newCat.name} maxLength={24} onChange={(e) => setNewCat({ ...newCat, name: e.target.value })} aria-label="Cat name" />
-            <button className="icon-btn" aria-label="Random name" onClick={() => setNewCat({ ...newCat, name: randomCatName() })}><Dices size={22} /></button>
+            <input className="name-input" value={newCat.name} maxLength={24} onChange={(e) => setNewCat({ ...newCat, name: e.target.value })} aria-label={t('field.catName')} />
+            <button className="icon-btn" aria-label={t('name.random')} onClick={() => setNewCat({ ...newCat, name: randomCatName() })}><Dices size={22} /></button>
           </div>
-          <h3 className="label">Personality <span className="hint">optional, up to 3</span></h3>
+          <h3 className="label">{t('attr.personality')} <span className="hint">{t('name.tagsHint')}</span></h3>
           <div className="chips">
-            {meta.personalityTags.map((t) => {
-              const on = newCat.tags.includes(t);
+            {meta.personalityTags.map((tag) => {
+              const on = newCat.tags.includes(tag);
               return (
-                <Chip key={t} active={on} onClick={() => setNewCat({ ...newCat, tags: on ? newCat.tags.filter((x) => x !== t) : newCat.tags.length < 3 ? [...newCat.tags, t] : newCat.tags })}>{t}</Chip>
+                <Chip key={tag} active={on} onClick={() => setNewCat({ ...newCat, tags: on ? newCat.tags.filter((x) => x !== tag) : newCat.tags.length < 3 ? [...newCat.tags, tag] : newCat.tags })}>{t.tag(tag)}</Chip>
               );
             })}
           </div>
-          <button className="btn btn-primary btn-lg btn-block mt" disabled={!newCat.name.trim()} onClick={() => save(null)}>Add to my Chatdex</button>
-          <button className="btn btn-link btn-block" onClick={() => setPickOpen(true)}>Actually, I know this cat: pick it from the list</button>
+          <button className="btn btn-primary btn-lg btn-block mt" disabled={!newCat.name.trim()} onClick={() => save(null)}>{t('name.add')}</button>
+          <button className="btn btn-link btn-block" onClick={() => setPickOpen(true)}>{t('name.knowIt')}</button>
         </div>
       )}
 
-      {step === 'saving' && <div className="capture-panel center"><Spinner label="Saving your capture…" /></div>}
+      {step === 'saving' && <div className="capture-panel center"><Spinner label={t('capture.saving')} /></div>}
 
       {step === 'saveError' && (
         <div className="capture-panel center">
           <div className="big-emoji">😿</div>
-          <h2>Upload failed</h2>
+          <h2>{t('capture.uploadFailed')}</h2>
           <p className="muted">{error}</p>
-          <p className="muted small">Your photo and answers are kept. Try again when you have a connection.</p>
-          <button className="btn btn-primary btn-lg btn-block" onClick={() => save()}>Retry</button>
-          <button className="btn btn-link" onClick={reset}>Start over</button>
+          <p className="muted small">{t('capture.kept')}</p>
+          <button className="btn btn-primary btn-lg btn-block" onClick={() => save()}>{t('common.retry')}</button>
+          <button className="btn btn-link" onClick={reset}>{t('capture.startOver')}</button>
         </div>
       )}
     </main>

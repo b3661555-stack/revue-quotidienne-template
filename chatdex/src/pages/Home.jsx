@@ -4,12 +4,13 @@ import { Bell, Camera, ChevronRight } from 'lucide-react';
 import { api } from '../api.js';
 import { useApp, useApi } from '../store.jsx';
 import { Avatar, EmptyState, ErrorState, LevelBar, Page, ProgressBar, Segmented, Spinner } from '../components/ui.jsx';
-import { FeedItem } from '../components/social.jsx';
+import { FeedItem, huntTitle } from '../components/social.jsx';
 import { distanceKm, getPosition, lastKnownPosition, locationPermission } from '../lib/location.js';
-import { plural } from '../lib/format.js';
+import { errorText, useT } from '../i18n/index.jsx';
 
 function NearbyCard() {
   const navigate = useNavigate();
+  const t = useT();
   const [state, setState] = useState({ status: 'idle' });
 
   useEffect(() => {
@@ -35,7 +36,7 @@ function NearbyCard() {
     return (
       <button className="card card-cta nearby" onClick={() => navigate('/explore')}>
         <span className="nearby-emoji">🗺️</span>
-        <span className="grow"><strong>Which cats live around you?</strong><span className="muted small block">Open the map to find cats and hotspots nearby.</span></span>
+        <span className="grow"><strong>{t('home.nearbyNoLoc')}</strong><span className="muted small block">{t('home.nearbyNoLocSub')}</span></span>
         <ChevronRight />
       </button>
     );
@@ -44,10 +45,10 @@ function NearbyCard() {
     <button className="card card-cta nearby" onClick={() => navigate('/explore')}>
       <span className="nearby-emoji">🐈</span>
       <span className="grow">
-        <strong>{state.near ? `${plural(state.near, 'cat')} around you` : 'No cats registered around you yet'}</strong>
+        <strong>{state.near ? t('home.catsAround', { count: state.near }) : t('home.noCatsAround')}</strong>
         <span className="muted small block">
-          {state.near ? `${state.uncollected} not in your Chatdex yet` : 'Be the first to put your street on the map!'}
-          {state.hot ? ` · 🔥 hotspot in ${state.hot.region}` : ''}
+          {state.near ? t('home.notCollectedYet', { count: state.uncollected }) : t('home.beFirst')}
+          {state.hot ? ` · 🔥 ${t('home.hotspotIn', { region: t.region(state.hot.region) })}` : ''}
         </span>
       </span>
       <ChevronRight />
@@ -56,6 +57,7 @@ function NearbyCard() {
 }
 
 function ActiveHunts() {
+  const t = useT();
   const { data } = useApi('/hunts');
   const hunts = data?.active?.filter((h) => h.status === 'active') || [];
   if (!data) return null;
@@ -63,7 +65,7 @@ function ActiveHunts() {
     return (
       <Link to="/hunts" className="card card-cta hunt-cta">
         <span className="nearby-emoji">🏹</span>
-        <span className="grow"><strong>Start a Cat Hunt</strong><span className="muted small block">Go out with friends and find as many cats as you can.</span></span>
+        <span className="grow"><strong>{t('home.startHunt')}</strong><span className="muted small block">{t('home.startHuntSub')}</span></span>
         <ChevronRight />
       </Link>
     );
@@ -72,15 +74,15 @@ function ActiveHunts() {
   return (
     <Link to={`/hunts/${h.id}`} className="card hunt-banner">
       <div className="hunt-banner-top">
-        <span className="pill pill-live">● LIVE</span>
-        <span className="muted small">{plural(h.participants.length, 'hunter')}</span>
+        <span className="pill pill-live">● {t('hunt.live')}</span>
+        <span className="muted small">{t('common.hunters', { count: h.participants.length })}</span>
       </div>
-      <strong className="hunt-title">🏹 {h.title}</strong>
+      <strong className="hunt-title">🏹 {huntTitle(t, h)}</strong>
       <div className="hunt-progress-row">
         <ProgressBar value={h.progress} max={h.goal} color="linear-gradient(90deg,#6b4eff,#ff5fc8)" />
-        <span className="small strong">{h.progress}/{h.goal} cats</span>
+        <span className="small strong">{t('hunt.progressCats', { progress: h.progress, goal: h.goal })}</span>
       </div>
-      <span className="small muted">{h.joined ? "You're in! Every cat you capture counts." : 'Tap to join the hunt'}</span>
+      <span className="small muted">{h.joined ? t('home.huntJoined') : t('home.huntTapJoin')}</span>
     </Link>
   );
 }
@@ -88,28 +90,29 @@ function ActiveHunts() {
 function Suggestions() {
   const { data, setData } = useApi('/users');
   const { toast } = useApp();
+  const t = useT();
   const users = data?.users?.slice(0, 6) || [];
   if (!users.length) return null;
   const follow = async (u) => {
     try {
       await api(`/users/${u.username}/follow`, { method: 'POST' });
       setData((d) => ({ ...d, users: d.users.map((x) => (x.id === u.id ? { ...x, isFollowing: true } : x)) }));
-      toast(`You're now following ${u.displayName}`, 'success');
-    } catch (err) { toast(err.message, 'error'); }
+      toast(t('social.nowFollowing', { name: u.displayName }), 'success');
+    } catch (err) { toast(errorText(t, err), 'error'); }
   };
   return (
     <section>
-      <h2 className="section-title">Hunters to follow</h2>
+      <h2 className="section-title">{t('home.huntersToFollow')}</h2>
       <div className="hscroll">
         {users.map((u) => (
           <div key={u.id} className="card mini-user">
             <Link to={`/u/${u.username}`} className="mini-user-link">
               <Avatar user={u} size={52} />
               <strong className="truncate">{u.displayName}</strong>
-              <span className="muted small">Lv {u.level} · {u.cats} cats</span>
+              <span className="muted small">{t('level.short', { level: u.level })} · {t('common.cats', { count: u.cats })}</span>
             </Link>
             <button className={`btn btn-sm ${u.isFollowing ? 'btn-ghost' : 'btn-primary'}`} disabled={u.isFollowing} onClick={() => follow(u)}>
-              {u.isFollowing ? 'Following' : 'Follow'}
+              {u.isFollowing ? t('social.following') : t('social.follow')}
             </button>
           </div>
         ))}
@@ -119,6 +122,7 @@ function Suggestions() {
 }
 
 function Feed() {
+  const t = useT();
   const [scope, setScope] = useState('all');
   const [items, setItems] = useState([]);
   const [next, setNext] = useState(null);
@@ -143,36 +147,37 @@ function Feed() {
   return (
     <section>
       <div className="feed-header">
-        <h2 className="section-title">Cat activity</h2>
-        <Segmented value={scope} onChange={setScope} options={[{ value: 'all', label: 'Everyone' }, { value: 'following', label: 'Following' }]} />
+        <h2 className="section-title">{t('home.activity')}</h2>
+        <Segmented value={scope} onChange={setScope} options={[{ value: 'all', label: t('home.everyone') }, { value: 'following', label: t('social.following') }]} />
       </div>
       {status === 'loading' && <Spinner />}
       {status === 'error' && <ErrorState error={error} onRetry={() => load()} />}
       {status !== 'loading' && status !== 'error' && !items.length && (
         <EmptyState
           icon={scope === 'following' ? '👥' : '🐾'}
-          title={scope === 'following' ? 'Nothing from your hunters yet' : 'No activity yet'}
-          text={scope === 'following' ? 'Follow other hunters to see their discoveries here.' : 'Capture the first cat and start the story!'}
-          action={scope === 'following' ? <button className="btn btn-ghost" onClick={() => setScope('all')}>See everyone</button> : <Link to="/capture" className="btn btn-primary">📸 Capture a cat</Link>}
+          title={scope === 'following' ? t('home.emptyFollowingTitle') : t('home.emptyAllTitle')}
+          text={scope === 'following' ? t('home.emptyFollowingText') : t('home.emptyAllText')}
+          action={scope === 'following' ? <button className="btn btn-ghost" onClick={() => setScope('all')}>{t('home.seeEveryone')}</button> : <Link to="/capture" className="btn btn-primary">📸 {t('common.captureCat')}</Link>}
         />
       )}
       <div className="feed">{items.map((it) => <FeedItem key={it.id} item={it} />)}</div>
-      {next && status === 'ok' && <button className="btn btn-ghost btn-block" onClick={() => load(next)}>Load more</button>}
+      {next && status === 'ok' && <button className="btn btn-ghost btn-block" onClick={() => load(next)}>{t('common.loadMore')}</button>}
       {status === 'more' && <Spinner />}
     </section>
   );
 }
 
 export default function Home() {
-  const { me, meta } = useApp();
+  const { me } = useApp();
+  const t = useT();
   const { user, stats, unreadNotifications } = me;
   const hour = new Date().getHours();
-  const greeting = hour < 5 ? 'Night hunting,' : hour < 12 ? 'Good morning,' : hour < 18 ? 'Hey' : 'Good evening,';
+  const greeting = t(hour < 5 ? 'home.greetNight' : hour < 12 ? 'home.greetMorning' : hour < 18 ? 'home.greetDay' : 'home.greetEvening');
   return (
     <Page className="home">
       <header className="home-header">
         <span className="logo">Chatdex</span>
-        <Link to="/notifications" className="icon-btn bell" aria-label={`Notifications${unreadNotifications ? ` (${unreadNotifications} unread)` : ''}`}>
+        <Link to="/notifications" className="icon-btn bell" aria-label={t('notif.title')}>
           <Bell size={22} />
           {unreadNotifications > 0 && <span className="badge-dot">{unreadNotifications > 9 ? '9+' : unreadNotifications}</span>}
         </Link>
@@ -184,18 +189,18 @@ export default function Home() {
           <div className="grow">
             <p className="muted small">{greeting}</p>
             <h2 className="hero-name">{user.displayName}</h2>
-            <p className="hero-title">{user.title}</p>
+            <p className="hero-title">{t(`title.${user.titleId}`)}</p>
           </div>
         </div>
         <LevelBar user={user} />
         <div className="hero-stats">
-          <Link to="/dex?scope=mine"><strong>{stats.cats}</strong><span>cats</span></Link>
-          <Link to="/dex?scope=mine&sort=rarity"><strong>{stats.rare}</strong><span>rare+</span></Link>
-          <Link to="/achievements"><strong>{stats.badges}</strong><span>badges</span></Link>
-          <Link to="/me"><strong>{stats.regions}</strong><span>regions</span></Link>
+          <Link to="/dex?scope=mine"><strong>{stats.cats}</strong><span>{t('stat.cats')}</span></Link>
+          <Link to="/dex?scope=mine&sort=rarity"><strong>{stats.rare}</strong><span>{t('stat.rarePlus')}</span></Link>
+          <Link to="/achievements"><strong>{stats.badges}</strong><span>{t('stat.badges')}</span></Link>
+          <Link to="/me"><strong>{stats.regions}</strong><span>{t('stat.regions')}</span></Link>
         </div>
         <Link to="/dex" className="collection-line">
-          <span className="small strong">Collection {stats.cats}/{me.totalCats}</span>
+          <span className="small strong">{t('home.collection', { n: stats.cats, total: me.totalCats })}</span>
           <ProgressBar value={stats.cats} max={me.totalCats} />
         </Link>
       </section>
@@ -204,8 +209,8 @@ export default function Home() {
         <Link to="/capture" className="card first-capture">
           <div className="first-capture-icon"><Camera size={30} /></div>
           <div>
-            <strong>Catch your first cat!</strong>
-            <p className="small">See a cat? Snap it to start your Chatdex and earn your first badge.</p>
+            <strong>{t('home.firstCatch')}</strong>
+            <p className="small">{t('home.firstCatchSub')}</p>
           </div>
         </Link>
       )}

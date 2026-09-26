@@ -1,4 +1,5 @@
 import { all, get, run, tx } from '../db.js';
+import { httpError } from '../http.js';
 import { config } from '../config.js';
 import { computeRarity, levelFor, RARITIES, XP } from './game.js';
 import { regionFor, roundCoord, snap } from './geo.js';
@@ -24,13 +25,13 @@ export function recordCapture(input) {
 
   return tx(() => {
     const user = get('SELECT * FROM users WHERE id = ?', input.userId);
-    if (!user) throw Object.assign(new Error('User not found'), { status: 404 });
+    if (!user) throw httpError(404, 'userNotFound');
 
     let cat;
     let isNewCat = false;
     if (input.catId) {
       cat = get('SELECT * FROM cats WHERE id = ? AND hidden = 0', input.catId);
-      if (!cat) throw Object.assign(new Error('That cat no longer exists'), { status: 404 });
+      if (!cat) throw httpError(404, 'catNotFound');
     } else {
       isNewCat = true;
       const artSeed = input.artSeed ?? randomSeed();
@@ -58,18 +59,18 @@ export function recordCapture(input) {
 
     const xp = [];
     if (isNewCat) {
-      xp.push({ label: 'New cat discovered', xp: XP.newCat });
-      if (bonusFor(cat.rarity)) xp.push({ label: `${cat.rarity[0].toUpperCase()}${cat.rarity.slice(1)} bonus`, xp: bonusFor(cat.rarity) });
+      xp.push({ key: 'newCat', label: 'New cat discovered', xp: XP.newCat });
+      if (bonusFor(cat.rarity)) xp.push({ key: 'rarityBonus', params: { rarity: cat.rarity }, label: `${cat.rarity} bonus`, xp: bonusFor(cat.rarity) });
     } else if (firstForUser) {
-      xp.push({ label: 'New cat for your collection', xp: XP.firstSighting });
-      if (bonusFor(cat.rarity)) xp.push({ label: `${cat.rarity[0].toUpperCase()}${cat.rarity.slice(1)} bonus`, xp: Math.round(bonusFor(cat.rarity) / 2) });
+      xp.push({ key: 'firstSighting', label: 'New cat for your collection', xp: XP.firstSighting });
+      if (bonusFor(cat.rarity)) xp.push({ key: 'rarityBonus', params: { rarity: cat.rarity }, label: `${cat.rarity} bonus`, xp: Math.round(bonusFor(cat.rarity) / 2) });
     } else {
       const sameDay = atMs - Date.parse(prevUserObs.created_at) < DAY / 2;
-      xp.push({ label: sameDay ? 'Another look' : 'Observation', xp: sameDay ? XP.repeatSameDay : XP.repeat });
+      xp.push({ key: sameDay ? 'repeatSameDay' : 'repeat', label: sameDay ? 'Another look' : 'Observation', xp: sameDay ? XP.repeatSameDay : XP.repeat });
     }
-    if (regionIsNew && lat != null) xp.push({ label: `New region: ${region}`, xp: XP.newRegion });
-    if (respotted) xp.push({ label: 'Re-spotted after a long absence', xp: XP.respotted });
-    if (input.multiCat) xp.push({ label: 'Cat group photo', xp: XP.multiCat });
+    if (regionIsNew && lat != null) xp.push({ key: 'newRegion', params: { region }, label: `New region: ${region}`, xp: XP.newRegion });
+    if (respotted) xp.push({ key: 'respotted', label: 'Re-spotted after a long absence', xp: XP.respotted });
+    if (input.multiCat) xp.push({ key: 'multiCat', label: 'Cat group photo', xp: XP.multiCat });
     const xpTotal = xp.reduce((s, x) => s + x.xp, 0);
 
     const obsRes = run(
@@ -108,13 +109,13 @@ export function recordCapture(input) {
       addEvent({ type: 'respotted', userId: user.id, catId: cat.id, observationId, data: { daysMissing, region }, isDemo, at });
       const collectors = all('SELECT DISTINCT user_id FROM observations WHERE cat_id = ? AND user_id != ?', cat.id, user.id);
       for (const c of collectors) {
-        notify({ userId: c.user_id, type: 'respotted', actorId: user.id, catId: cat.id, text: `🚨 ${cat.name} has been spotted again after ${daysMissing} days, by ${user.display_name}!`, at });
+        notify({ userId: c.user_id, type: 'respotted', actorId: user.id, catId: cat.id, text: `🚨 ${cat.name} has been spotted again after ${daysMissing} days, by ${user.display_name}!`, data: { cat: cat.name, days: daysMissing, user: user.display_name }, at });
       }
     } else {
       addEvent({ type: 'observation', userId: user.id, catId: cat.id, observationId, data: { hunterRank, firstForUser, region }, isDemo, at });
     }
     if (!isNewCat && firstForUser && cat.first_catcher_id && cat.first_catcher_id !== user.id) {
-      notify({ userId: cat.first_catcher_id, type: 'first_catch_found', actorId: user.id, catId: cat.id, text: `${user.display_name} found ${cat.name}, your First Catch! Hunter #${hunterRank}.`, at });
+      notify({ userId: cat.first_catcher_id, type: 'first_catch_found', actorId: user.id, catId: cat.id, text: `${user.display_name} found ${cat.name}, your First Catch! Hunter #${hunterRank}.`, data: { cat: cat.name, rank: hunterRank, user: user.display_name }, at });
     }
 
     const achievements = evaluateAchievements(user.id, at, isDemo);

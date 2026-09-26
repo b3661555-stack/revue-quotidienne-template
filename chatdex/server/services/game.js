@@ -73,19 +73,15 @@ export const XP = {
 export const xpForLevel = (level) => 50 * level * (level - 1);
 export const levelFor = (xp) => Math.max(1, Math.floor((1 + Math.sqrt(1 + 0.08 * Math.max(0, xp))) / 2));
 
-export function titleFor(level) {
-  if (level >= 30) return 'Legendary Whisker';
-  if (level >= 20) return 'Master Tracker';
-  if (level >= 10) return 'Cat Hunter';
-  if (level >= 5) return 'Cat Scout';
-  return 'Curious Kitten';
-}
+export const TITLES = { legend: 'Legendary Whisker', master: 'Master Tracker', hunter: 'Cat Hunter', scout: 'Cat Scout', kitten: 'Curious Kitten' };
+export const titleIdFor = (level) => (level >= 30 ? 'legend' : level >= 20 ? 'master' : level >= 10 ? 'hunter' : level >= 5 ? 'scout' : 'kitten');
+export const titleFor = (level) => TITLES[titleIdFor(level)];
 
 export function levelInfo(xp) {
   const level = levelFor(xp);
   const floor = xpForLevel(level);
   const next = xpForLevel(level + 1);
-  return { level, title: titleFor(level), xp, levelXp: xp - floor, levelSpan: next - floor, nextLevelXp: next };
+  return { level, title: titleFor(level), titleId: titleIdFor(level), xp, levelXp: xp - floor, levelSpan: next - floor, nextLevelXp: next };
 }
 
 export const isValidAttr = (list, id) => list.some((x) => x.id === id);

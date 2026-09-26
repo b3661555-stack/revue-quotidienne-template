@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { get, run } from './db.js';
 import { config } from './config.js';
+import { errorBody } from './errors.js';
 
 const SESSION_DAYS = 60;
 export const COOKIE = 'chatdex_session';
@@ -60,6 +61,6 @@ export function sessionMiddleware(req, _res, next) {
 }
 
 export function requireAuth(req, res, next) {
-  if (!req.user) return res.status(401).json({ error: 'Please log in to continue.' });
+  if (!req.user) return res.status(401).json(errorBody('loginRequired'));
   next();
 }

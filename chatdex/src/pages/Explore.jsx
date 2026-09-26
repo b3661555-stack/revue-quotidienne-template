@@ -7,7 +7,8 @@ import { CatImage, Chip, ErrorState, Page, RARITY, RarityBadge, Spinner } from '
 import { TILE_ATTR, TILE_URL } from '../components/MiniMap.jsx';
 import { catSvg } from '../lib/catArt.js';
 import { distanceKm, getPosition, lastKnownPosition } from '../lib/location.js';
-import { plural, timeAgo } from '../lib/format.js';
+import { useT } from '../i18n/index.jsx';
+import { huntTitle } from '../components/social.jsx';
 
 const DEFAULT_CENTER = { lat: 46.49, lng: 6.75 }; // Lake Geneva, where the demo world lives
 
@@ -32,6 +33,7 @@ const meIcon = () => L.divIcon({ className: '', html: '<div class="map-me"><span
 export default function Explore() {
   const navigate = useNavigate();
   const { toast } = useApp();
+  const t = useT();
   const { data, error, loading, reload } = useApi('/map');
   const [pos, setPos] = useState(lastKnownPosition());
   const [filter, setFilter] = useState('all');
@@ -50,11 +52,11 @@ export default function Explore() {
       setPos(p);
       mapRef.current?.setView([p.lat, p.lng], 15);
     } catch (err) {
-      if (!silent) toast(`${err.message} Showing the whole map instead.`, 'error');
+      if (!silent) toast(`${t(`loc.error.${err.code || 'unavailable'}`)} ${t('map.wholeMap')}`, 'error');
     } finally {
       setLocating(false);
     }
-  }, [toast]);
+  }, [toast, t]);
 
   // Map init
   useEffect(() => {
@@ -117,15 +119,15 @@ export default function Explore() {
         <div ref={mapEl} className="map" data-testid="map" />
         {loading && !data && <div className="map-loading"><Spinner /></div>}
         {error && <div className="map-loading"><ErrorState error={error} onRetry={reload} /></div>}
-        {tilesFailed && <div className="map-fallback">🗺️ Map background unavailable (offline?). Cats are still shown below.</div>}
+        {tilesFailed && <div className="map-fallback">🗺️ {t('map.tilesFailed')}</div>}
         <div className="map-top">
           <div className="chips">
-            <Chip active={filter === 'all'} onClick={() => setFilter('all')}>All cats</Chip>
-            <Chip active={filter === 'new'} onClick={() => setFilter('new')}>Not collected</Chip>
-            <Chip active={filter === 'mine'} onClick={() => setFilter('mine')}>My cats</Chip>
+            <Chip active={filter === 'all'} onClick={() => setFilter('all')}>{t('dex.allCats')}</Chip>
+            <Chip active={filter === 'new'} onClick={() => setFilter('new')}>{t('map.notCollected')}</Chip>
+            <Chip active={filter === 'mine'} onClick={() => setFilter('mine')}>{t('map.myCats')}</Chip>
           </div>
         </div>
-        <button className="icon-btn map-locate" onClick={() => locate(false)} aria-label="Center on me">{locating ? '…' : <LocateFixed size={20} />}</button>
+        <button className="icon-btn map-locate" onClick={() => locate(false)} aria-label={t('map.centerMe')}>{locating ? '…' : <LocateFixed size={20} />}</button>
 
         {selected && (
           <div className="map-card card">
@@ -133,30 +135,29 @@ export default function Explore() {
               <div className="row gap" onClick={() => navigate(`/cat/${selected.item.id}`)} role="link" tabIndex={0}>
                 <CatImage cat={selected.item} thumb={selected.item.thumb} className="map-card-img" />
                 <div className="grow">
-                  <strong>{selected.item.collected ? selected.item.name : `${selected.item.name}`}</strong>
+                  <strong>{selected.item.name}</strong>
                   <div><RarityBadge rarity={selected.item.rarity} small /></div>
-                  <p className="muted small">{selected.item.collected ? '✅ In your Chatdex' : '🔎 Not collected yet'} · seen {timeAgo(selected.item.lastObservedAt)}</p>
-                  {selected.item.legendTitle && <p className="small">{selected.item.legendTitle}</p>}
+                  <p className="muted small">{selected.item.collected ? `✅ ${t('cat.inDex')}` : `🔎 ${t('map.notCollectedYet')}`} · {t('cat.seen', { when: t.timeAgo(selected.item.lastObservedAt) })}</p>
                 </div>
               </div>
             )}
             {selected.type === 'hotspot' && (
               <div>
-                <strong>🔥 Cat hotspot: {selected.item.region}</strong>
-                <p className="small">🐈 {plural(selected.item.cats, 'cat')} observed here this week</p>
-                <p className="small">👥 {plural(selected.item.hunters, 'hunter')} · 📸 {plural(selected.item.observations, 'sighting')}</p>
+                <strong>🔥 {t('map.hotspot', { region: t.region(selected.item.region) })}</strong>
+                <p className="small">🐈 {t('map.hotspotCats', { count: selected.item.cats })}</p>
+                <p className="small">👥 {t('common.hunters', { count: selected.item.hunters })} · 📸 {t('common.sightings', { count: selected.item.observations })}</p>
               </div>
             )}
             {selected.type === 'hunter' && (
               <Link to={`/u/${selected.item.username}`} className="row gap">
                 <span className="map-hunter static" style={{ background: selected.item.avatarColor }}>{selected.item.avatarEmoji}</span>
-                <span><strong>{selected.item.displayName}</strong> is hunting nearby<span className="muted small block">active {timeAgo(selected.item.lastActiveAt)} · area only</span></span>
+                <span>{t('map.hunterNearby', { name: <strong>{selected.item.displayName}</strong> })}<span className="muted small block">{t('map.activeAreaOnly', { when: t.timeAgo(selected.item.lastActiveAt) })}</span></span>
               </Link>
             )}
             {selected.type === 'hunt' && (
               <Link to={`/hunts/${selected.item.id}`}>
-                <strong>🏹 {selected.item.title}</strong>
-                <p className="small">{selected.item.progress}/{selected.item.goal} cats found · tap to join</p>
+                <strong>🏹 {huntTitle(t, selected.item)}</strong>
+                <p className="small">{t('map.huntProgress', { progress: selected.item.progress, goal: selected.item.goal })}</p>
               </Link>
             )}
           </div>
@@ -165,34 +166,34 @@ export default function Explore() {
 
       <section className="explore-sheet">
         <div className="row between">
-          <h2 className="section-title">{pos ? (nearby.length ? `${plural(nearby.length, 'cat')} around you` : 'No known cats within 2 km') : 'Cats on the map'}</h2>
-          <Link to="/hunts" className="btn btn-sm btn-ghost"><Users size={14} /> Hunts</Link>
+          <h2 className="section-title">{pos ? (nearby.length ? t('home.catsAround', { count: nearby.length }) : t('map.noneNear')) : t('map.onMap')}</h2>
+          <Link to="/hunts" className="btn btn-sm btn-ghost"><Users size={14} /> {t('map.hunts')}</Link>
         </div>
-        {!pos && <p className="muted small">Turn on location to see the cats closest to you. <button className="btn btn-link" onClick={() => locate(false)}>Locate me</button></p>}
-        {pos && !nearby.length && <p className="muted small">Uncharted territory! Every cat you find here will be a First Catch.</p>}
+        {!pos && <p className="muted small">{t('map.turnOn')} <button className="btn btn-link" onClick={() => locate(false)}>{t('map.locateMe')}</button></p>}
+        {pos && !nearby.length && <p className="muted small">{t('map.uncharted')}</p>}
         <div className="hscroll">
           {(pos ? nearby : cats.slice(0, 20)).map((c) => (
             <button key={c.id} className="nearby-cat" onClick={() => focus(c)}>
               <CatImage cat={c} thumb={c.thumb} className={c.collected ? '' : 'dim'} />
               <strong className="truncate">{c.name}</strong>
-              <span className="tiny muted">{c.d != null ? `${c.d < 1 ? `${Math.round(c.d * 1000)} m` : `${c.d.toFixed(1)} km`}` : c.region}</span>
+              <span className="tiny muted">{c.d != null ? `${c.d < 1 ? `${Math.round(c.d * 1000)} m` : `${c.d.toFixed(1)} km`}` : t.region(c.region)}</span>
             </button>
           ))}
         </div>
         {data && data.hotspots.length > 0 && (
           <>
-            <h2 className="section-title">🔥 Hotspots this week</h2>
+            <h2 className="section-title">🔥 {t('map.hotspotsWeek')}</h2>
             <div className="hotspot-list">
               {data.hotspots.slice(0, 5).map((h, i) => (
                 <button key={i} className="card hotspot" onClick={() => { mapRef.current?.setView([h.lat, h.lng], 15); setSelected({ type: 'hotspot', item: h }); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                   <span className="hotspot-flame">🔥</span>
-                  <span className="grow"><strong>Cat hotspot: {h.region}</strong><span className="muted small block">🐈 {plural(h.cats, 'cat')} this week · 👥 {plural(h.hunters, 'hunter')}</span></span>
+                  <span className="grow"><strong>{t('map.hotspot', { region: t.region(h.region) })}</strong><span className="muted small block">🐈 {t('map.hotspotCats', { count: h.cats })} · 👥 {t('common.hunters', { count: h.hunters })}</span></span>
                 </button>
               ))}
             </div>
           </>
         )}
-        <p className="privacy-note">📍 Positions are approximate (~250 m) and never show a home. Watch from public ground, don't chase, and let cats come to you.</p>
+        <p className="privacy-note">📍 {t('map.privacy')}</p>
       </section>
     </Page>
   );

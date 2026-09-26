@@ -1,8 +1,10 @@
 export class ApiError extends Error {
-  constructor(message, status, offline = false) {
+  constructor(message, status, offline = false, code = null, params = null) {
     super(message);
     this.status = status;
     this.offline = offline;
+    this.code = code;
+    this.params = params;
   }
 }
 
@@ -27,7 +29,7 @@ export async function api(path, { method = 'GET', body, signal } = {}) {
   try { data = await res.json(); } catch { /* empty body */ }
   if (!res.ok) {
     if (res.status === 401 && !path.startsWith('/auth/')) onUnauthorized();
-    throw new ApiError(data?.error || `Something went wrong (${res.status}).`, res.status);
+    throw new ApiError(data?.error || `Something went wrong (${res.status}).`, res.status, false, data?.code, data?.params);
   }
   return data;
 }
