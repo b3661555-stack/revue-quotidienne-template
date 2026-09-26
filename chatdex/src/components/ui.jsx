@@ -67,7 +67,7 @@ export function LevelBar({ user, compact = false }) {
     <div className={`levelbar ${compact ? 'levelbar-compact' : ''}`}>
       <div className="levelbar-top">
         <span className="levelbar-level">{t('level.short', { level: user.level })}</span>
-        <span className="muted small">{t('level.xp', { xp: t.number(user.levelXp), span: t.number(user.levelSpan) })}</span>
+        <span className="muted small ltr">{t('level.xp', { xp: t.number(user.levelXp), span: t.number(user.levelSpan) })}</span>
       </div>
       <div className="bar"><div className="bar-fill" style={{ width: `${pct}%` }} /></div>
     </div>

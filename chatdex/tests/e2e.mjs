@@ -266,6 +266,8 @@ try {
     const text = await p.evaluate(() => document.body.innerText);
     const m = RAW_KEY.exec(text.replace(/[\w.-]+@[\w.-]+/g, ''));
     assert.equal(m, null, `${where}: untranslated key "${m?.[0]}"`);
+    const ph = /\{[a-zA-Z]+\}/.exec(text);
+    assert.equal(ph, null, `${where}: uninterpolated placeholder "${ph?.[0]}"`);
   };
 
   await step('language switcher on the welcome screen (15 languages)', async () => {

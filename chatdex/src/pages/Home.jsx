@@ -80,7 +80,7 @@ function ActiveHunts() {
       <strong className="hunt-title">🏹 {huntTitle(t, h)}</strong>
       <div className="hunt-progress-row">
         <ProgressBar value={h.progress} max={h.goal} color="linear-gradient(90deg,#6b4eff,#ff5fc8)" />
-        <span className="small strong">{t('hunt.progressCats', { progress: h.progress, goal: h.goal })}</span>
+        <span className="small strong ltr">{t('hunt.progressCats', { progress: h.progress, goal: h.goal })}</span>
       </div>
       <span className="small muted">{h.joined ? t('home.huntJoined') : t('home.huntTapJoin')}</span>
     </Link>

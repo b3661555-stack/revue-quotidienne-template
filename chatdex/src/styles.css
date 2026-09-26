@@ -584,3 +584,4 @@ select { padding: 9px 12px; font-size: 14px; }
 .leaflet-container { direction: ltr; }
 :lang(ar), :lang(hi), :lang(bn), :lang(zh), :lang(ja), :lang(ko) { --font: 'Nunito Variable', system-ui, -apple-system, 'Segoe UI', 'Noto Sans', 'Noto Sans Arabic', 'Noto Sans Devanagari', 'Noto Sans Bengali', 'PingFang SC', 'Hiragino Sans', 'Apple SD Gothic Neo', 'Microsoft YaHei', sans-serif; }
 :lang(ar) .upper, :lang(zh) .upper, :lang(ja) .upper, :lang(ko) .upper, :lang(hi) .upper, :lang(bn) .upper { text-transform: none; }
+.ltr { direction: ltr; unicode-bidi: isolate; }

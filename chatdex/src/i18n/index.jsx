@@ -40,7 +40,7 @@ export function detectLanguage() {
 function interpolate(str, vars) {
   if (!vars) return str;
   if (!Object.values(vars).some(isValidElement)) {
-    return str.replace(/\{(\w+)\}/g, (m, k) => (vars[k] ?? vars[k] === 0 ? String(vars[k]) : m));
+    return str.replace(/\{(\w+)\}/g, (m, k) => (vars[k] != null ? String(vars[k]) : m));
   }
   // Rich interpolation: return an array of strings and elements.
   return str.split(/(\{\w+\})/g).filter(Boolean).map((part, i) => {
