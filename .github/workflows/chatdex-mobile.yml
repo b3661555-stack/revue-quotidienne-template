@@ -1,0 +1,79 @@
+# Builds the Chatdex Android app (debug APK, downloadable from the run page) on every push that
+# touches chatdex/, and the iOS app (simulator build, no signing) when started manually.
+# Set the repository variable CHATDEX_API_URL (Settings → Secrets and variables → Actions → Variables)
+# to your deployed server, e.g. https://chatdex.onrender.com
+name: Chatdex mobile builds
+
+on:
+  push:
+    paths: ['chatdex/**', '.github/workflows/chatdex-mobile.yml']
+  workflow_dispatch:
+    inputs:
+      ios:
+        description: 'Also build iOS (macOS runner)'
+        type: boolean
+        default: true
+
+concurrency:
+  group: chatdex-mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: chatdex
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: chatdex/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm test
+      - name: Build web app for the native shell
+        run: npx vite build
+        env:
+          VITE_API_BASE: ${{ vars.CHATDEX_API_URL }}
+      - run: npx cap sync android
+      - name: Build debug APK
+        working-directory: chatdex/android
+        run: ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chatdex-debug-apk
+          path: chatdex/android/app/build/outputs/apk/debug/app-debug.apk
+
+  ios:
+    if: github.event_name == 'workflow_dispatch' && inputs.ios
+    runs-on: macos-15
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: chatdex
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: chatdex/package-lock.json
+      - run: npm ci
+      - name: Build web app for the native shell
+        run: npx vite build
+        env:
+          VITE_API_BASE: ${{ vars.CHATDEX_API_URL }}
+      - run: npx cap sync ios
+      - name: Build for the iOS simulator (unsigned)
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO build | tail -40
+          test ${PIPESTATUS[0]} -eq 0
