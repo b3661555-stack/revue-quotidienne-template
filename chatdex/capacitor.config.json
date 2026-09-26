@@ -1,0 +1,8 @@
+{
+  "appId": "com.chatdex.app",
+  "appName": "Chatdex",
+  "webDir": "dist",
+  "backgroundColor": "#fff7ee",
+  "android": { "allowMixedContent": false },
+  "ios": { "contentInset": "never", "backgroundColor": "#fff7ee" }
+}

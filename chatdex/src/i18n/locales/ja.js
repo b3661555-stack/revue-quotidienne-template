@@ -535,4 +535,12 @@ export default {
   'errors.huntNotFound': 'このハントは存在しません。',
   'errors.huntEnded': 'このハントはすでに終了しています。',
   'errors.unknownRoute': '不明なAPIルートです。',
+  "settings.privacy": "プライバシーポリシー",
+  "settings.deleteAccount": "アカウントを削除",
+  "settings.deleteTitle": "アカウントを削除しますか？",
+  "settings.deleteText": "プロフィール、写真、目撃記録、バッジ、フォロワーが完全に削除されます。ほかのハンターも見たネコはコミュニティのChatdexに残ります。この操作は取り消せません。",
+  "settings.passwordConfirm": "確認のためパスワードを入力してください",
+  "settings.deleteConfirm": "完全に削除",
+  "settings.deleted": "アカウントを削除しました。",
+  "errors.wrongPassword": "パスワードが違います。",
 };

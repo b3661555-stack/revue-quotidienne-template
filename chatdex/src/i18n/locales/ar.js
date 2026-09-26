@@ -535,4 +535,12 @@ export default {
   'errors.huntNotFound': 'هذا الصيد غير موجود.',
   'errors.huntEnded': 'انتهى هذا الصيد بالفعل.',
   'errors.unknownRoute': 'مسار API غير معروف.',
+  "settings.privacy": "سياسة الخصوصية",
+  "settings.deleteAccount": "حذف حسابي",
+  "settings.deleteTitle": "هل تريد حذف حسابك؟",
+  "settings.deleteText": "سيؤدي هذا إلى حذف ملفك الشخصي وصورك ومشاهداتك وشاراتك ومتابعيك نهائيًا. تبقى القطط التي شاهدها صيادون آخرون في Chatdex المجتمع. لا يمكن التراجع عن ذلك.",
+  "settings.passwordConfirm": "أدخل كلمة المرور للتأكيد",
+  "settings.deleteConfirm": "حذف نهائيًا",
+  "settings.deleted": "تم حذف حسابك.",
+  "errors.wrongPassword": "كلمة المرور غير صحيحة.",
 };

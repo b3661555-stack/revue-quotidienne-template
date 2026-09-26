@@ -16,6 +16,8 @@ export const config = {
   catDetector: process.env.CAT_DETECTOR || 'coco-ssd',
   missingAfterDays: Number(process.env.MISSING_AFTER_DAYS || 30),
   cookieSecure: bool(process.env.COOKIE_SECURE, false),
+  // Origins allowed to call the API cross-origin (the iOS/Android apps).
+  corsOrigins: (process.env.CORS_ORIGINS || 'capacitor://localhost,https://localhost,http://localhost').split(',').map((s) => s.trim()).filter(Boolean),
 };
 config.uploadsDir = path.join(config.dataDir, 'uploads');
 config.dbPath = process.env.DB_PATH || path.join(config.dataDir, 'chatdex.db');

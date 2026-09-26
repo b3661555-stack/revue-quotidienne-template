@@ -224,4 +224,34 @@ describe('Chatdex API', () => {
     assert.equal(dbGet('SELECT hidden FROM observations WHERE id = ?', obsId).hidden, 1);
     assert.equal((await tom('/reports', { method: 'POST', body: { targetType: 'planet', targetId: 1, reason: 'x' } })).status, 400);
   });
+
+  test('native apps: bearer token and CORS', async () => {
+    const login = await client()('/auth/login', { method: 'POST', body: { email: 'emma@test.dev', password: 'secret123' } });
+    assert.match(login.data.token, /^[a-f0-9]{64}$/);
+    const me = await fetch(`${base}/me`, { headers: { authorization: `Bearer ${login.data.token}`, origin: 'capacitor://localhost' } });
+    assert.equal(me.status, 200);
+    assert.equal(me.headers.get('access-control-allow-origin'), 'capacitor://localhost');
+    const pre = await fetch(`${base}/captures`, { method: 'OPTIONS', headers: { origin: 'https://localhost', 'access-control-request-method': 'POST' } });
+    assert.equal(pre.status, 204);
+    const evil = await fetch(`${base}/me`, { headers: { authorization: `Bearer ${login.data.token}`, origin: 'https://evil.example' } });
+    assert.equal(evil.headers.get('access-control-allow-origin'), null);
+  });
+
+  test('account deletion removes the user and their data, keeps shared cats', async () => {
+    const zoe = client();
+    await register(zoe, 'zoe');
+    const own = await capture(zoe, { newCat: { name: 'Solo' }, attributes: { coatColor: 'cream', pattern: 'colorpoint', eyeColor: 'blue' } });
+    await capture(zoe, { catId: miloId });
+    const photoUrl = base.replace('/api', '') + own.data.cat.photo;
+    assert.equal((await fetch(photoUrl)).status, 200);
+    const before = (await tom(`/cats/${miloId}`)).data.cat.hunterCount;
+    assert.equal((await zoe('/me', { method: 'DELETE', body: { password: 'wrong' } })).data.code, 'wrongPassword');
+    assert.equal((await zoe('/me', { method: 'DELETE', body: { password: 'secret123' } })).status, 200);
+    assert.equal((await zoe('/me')).status, 401);
+    assert.equal((await tom('/users/zoe')).status, 404);
+    assert.equal((await tom(`/cats/${own.data.catId}`)).status, 404); // nobody else saw it
+    assert.equal((await tom(`/cats/${miloId}`)).data.cat.hunterCount, before - 1);
+    assert.equal((await fetch(photoUrl)).status, 404);
+    assert.equal((await client()('/auth/login', { method: 'POST', body: { email: 'zoe@test.dev', password: 'secret123' } })).status, 401);
+  });
 });

@@ -11,6 +11,13 @@ const TYPES = {
 };
 const MAX_BYTES = 6 * 1024 * 1024;
 
+export function deletePhotos(paths) {
+  for (const p of paths) {
+    const name = path.basename(String(p));
+    if (/^[\w-]+\.(jpg|png|webp)$/.test(name)) fs.rmSync(path.join(config.uploadsDir, name), { force: true });
+  }
+}
+
 /** Stores a base64 data URL photo and returns its public path. Storage is local disk; swap for S3/R2 here. */
 export function savePhoto(dataUrl, { required = true } = {}) {
   if (!dataUrl) {

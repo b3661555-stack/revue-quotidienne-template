@@ -535,4 +535,12 @@ export default {
   'errors.huntNotFound': 'Questa caccia non esiste.',
   'errors.huntEnded': 'Questa caccia è già finita.',
   'errors.unknownRoute': 'Route API sconosciuta.',
+  "settings.privacy": "Informativa sulla privacy",
+  "settings.deleteAccount": "Elimina il mio account",
+  "settings.deleteTitle": "Eliminare il tuo account?",
+  "settings.deleteText": "Profilo, foto, avvistamenti, badge e follower verranno eliminati per sempre. I gatti visti anche da altri cacciatori restano nel Chatdex della community. Non si può annullare.",
+  "settings.passwordConfirm": "Inserisci la password per confermare",
+  "settings.deleteConfirm": "Elimina per sempre",
+  "settings.deleted": "Il tuo account è stato eliminato.",
+  "errors.wrongPassword": "Password errata.",
 };

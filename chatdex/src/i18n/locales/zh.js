@@ -535,4 +535,12 @@ export default {
   'errors.huntNotFound': '该狩猎不存在。',
   'errors.huntEnded': '该狩猎已经结束。',
   'errors.unknownRoute': '未知的 API 路由。',
+  "settings.privacy": "隐私政策",
+  "settings.deleteAccount": "删除我的账号",
+  "settings.deleteTitle": "要删除账号吗？",
+  "settings.deleteText": "这将永久删除你的个人资料、照片、目击记录、徽章和关注者。其他猎手也见过的猫咪会保留在社区 Chatdex 中。此操作无法撤销。",
+  "settings.passwordConfirm": "输入密码以确认",
+  "settings.deleteConfirm": "永久删除",
+  "settings.deleted": "你的账号已删除。",
+  "errors.wrongPassword": "密码错误。",
 };

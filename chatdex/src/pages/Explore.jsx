@@ -6,6 +6,7 @@ import { useApp, useApi } from '../store.jsx';
 import { CatImage, Chip, ErrorState, Page, RARITY, RarityBadge, Spinner } from '../components/ui.jsx';
 import { TILE_ATTR, TILE_URL } from '../components/MiniMap.jsx';
 import { catSvg } from '../lib/catArt.js';
+import { mediaUrl } from '../api.js';
 import { distanceKm, getPosition, lastKnownPosition } from '../lib/location.js';
 import { useT } from '../i18n/index.jsx';
 import { huntTitle } from '../components/social.jsx';
@@ -15,7 +16,7 @@ const DEFAULT_CENTER = { lat: 46.49, lng: 6.75 }; // Lake Geneva, where the demo
 function catIcon(c) {
   const color = RARITY[c.rarity].color;
   const inner = c.thumb
-    ? `<img src="${c.thumb}" alt="" />`
+    ? `<img src="${mediaUrl(c.thumb)}" alt="" />`
     : catSvg({ coatColor: c.coatColor, pattern: c.pattern, eyeColor: c.eyeColor, seed: c.artSeed, shiny: c.rarity === 'shiny' });
   return L.divIcon({
     className: '',

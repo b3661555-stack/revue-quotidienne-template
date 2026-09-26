@@ -535,4 +535,12 @@ export default {
   'errors.huntNotFound': 'Cette chasse n’existe pas.',
   'errors.huntEnded': 'Cette chasse est déjà terminée.',
   'errors.unknownRoute': 'Route d’API inconnue.',
+  "settings.privacy": "Politique de confidentialité",
+  "settings.deleteAccount": "Supprimer mon compte",
+  "settings.deleteTitle": "Supprimer ton compte ?",
+  "settings.deleteText": "Cela supprime définitivement ton profil, tes photos, observations, badges et abonnés. Les chats vus aussi par d’autres chasseurs restent dans le Chatdex de la communauté. C’est irréversible.",
+  "settings.passwordConfirm": "Saisis ton mot de passe pour confirmer",
+  "settings.deleteConfirm": "Supprimer définitivement",
+  "settings.deleted": "Ton compte a été supprimé.",
+  "errors.wrongPassword": "Mot de passe incorrect.",
 };

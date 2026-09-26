@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../store.jsx';
 import { CatArt } from '../components/ui.jsx';
+import { mediaUrl } from '../api.js';
 import { errorText, LanguageSelect, useT } from '../i18n/index.jsx';
 
 const HERO_CATS = [
@@ -72,6 +73,7 @@ export default function Welcome() {
             )}
           </div>
           {error && <p className="form-error">{error}</p>}
+          <a className="muted tiny" href={mediaUrl('/privacy.html')} target="_blank" rel="noreferrer">{t('settings.privacy')}</a>
         </div>
       </main>
     );

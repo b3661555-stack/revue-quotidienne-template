@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { api, setUnauthorizedHandler } from './api.js';
+import { api, setToken, setUnauthorizedHandler } from './api.js';
 
 const AppContext = createContext(null);
 export const useApp = () => useContext(AppContext);
@@ -63,18 +63,21 @@ export function AppProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const data = await api('/auth/login', { method: 'POST', body: { email, password } });
+    setToken(data.token);
     setMe(data);
     return data;
   }, []);
 
   const register = useCallback(async (payload) => {
     const data = await api('/auth/register', { method: 'POST', body: payload });
+    setToken(data.token);
     setMe(data);
     return data;
   }, []);
 
   const logout = useCallback(async () => {
     try { await api('/auth/logout', { method: 'POST' }); } catch { /* ignore */ }
+    setToken(null);
     setMe(null);
   }, []);
 

@@ -7,6 +7,17 @@ import './styles.css';
 import { AppProvider } from './store.jsx';
 import { I18nProvider } from './i18n/index.jsx';
 import App from './App.jsx';
+import { isNativeApp } from './api.js';
+
+// Android hardware back button: navigate back, or leave the app from the home screen.
+if (isNativeApp()) {
+  import('@capacitor/app').then(({ App: NativeApp }) => {
+    NativeApp.addListener('backButton', ({ canGoBack }) => {
+      if (canGoBack && window.location.pathname !== '/') window.history.back();
+      else NativeApp.exitApp();
+    });
+  }).catch(() => {});
+}
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

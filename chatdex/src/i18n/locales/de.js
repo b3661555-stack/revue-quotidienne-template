@@ -535,4 +535,12 @@ export default {
   'errors.huntNotFound': 'Diese Jagd gibt es nicht.',
   'errors.huntEnded': 'Diese Jagd ist schon beendet.',
   'errors.unknownRoute': 'Unbekannte API-Route.',
+  "settings.privacy": "Datenschutzerklärung",
+  "settings.deleteAccount": "Mein Konto löschen",
+  "settings.deleteTitle": "Konto löschen?",
+  "settings.deleteText": "Dein Profil, deine Fotos, Sichtungen, Abzeichen und Follower werden endgültig gelöscht. Katzen, die auch andere Jäger gesehen haben, bleiben im Community-Chatdex. Das kann nicht rückgängig gemacht werden.",
+  "settings.passwordConfirm": "Gib zur Bestätigung dein Passwort ein",
+  "settings.deleteConfirm": "Endgültig löschen",
+  "settings.deleted": "Dein Konto wurde gelöscht.",
+  "errors.wrongPassword": "Falsches Passwort.",
 };

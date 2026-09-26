@@ -37,6 +37,7 @@ export const ERRORS = {
   huntNotFound: 'This hunt does not exist.',
   huntEnded: 'This hunt has already ended.',
   unknownRoute: 'Unknown API route.',
+  wrongPassword: 'Wrong password.',
 };
 
 export const FIELDS = {

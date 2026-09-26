@@ -326,6 +326,30 @@ try {
     }
   });
 
+  await step('delete account from settings, privacy policy reachable', async () => {
+    const c = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'en-US' });
+    const p = await c.newPage();
+    await p.goto(BASE);
+    await p.getByRole('button', { name: 'I already have an account' }).click();
+    await p.getByPlaceholder('you@example.com').fill('robin@e2e.dev');
+    await p.getByPlaceholder('••••••').fill('meowmeow');
+    await p.getByRole('button', { name: 'Log in' }).click();
+    await p.getByRole('heading', { name: 'Robin' }).waitFor();
+    await p.goto(`${BASE}/me/edit`);
+    const privacy = await p.getByRole('link', { name: 'Privacy policy' }).getAttribute('href');
+    assert.equal((await fetch(BASE + privacy)).status, 200);
+    await p.getByRole('button', { name: 'Delete my account' }).click();
+    await p.locator('.sheet input[type=password]').fill('wrong-password');
+    await p.getByRole('button', { name: 'Delete forever' }).click();
+    await p.getByText('Wrong password.').waitFor();
+    await p.locator('.sheet input[type=password]').fill('meowmeow');
+    await p.getByRole('button', { name: 'Delete forever' }).click();
+    await p.getByRole('button', { name: 'Start hunting' }).waitFor();
+    const relogin = await fetch(`${BASE}/api/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'robin@e2e.dev', password: 'meowmeow' }) });
+    assert.equal(relogin.status, 401);
+    await c.close();
+  });
+
   assert.deepEqual(pageErrors, [], `Page errors: ${pageErrors.join('\n')}`);
   console.log(`\n✅ ${steps.length} end-to-end steps passed. Screenshots: ${shots}`);
 } catch (err) {

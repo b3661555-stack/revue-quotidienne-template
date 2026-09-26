@@ -535,4 +535,12 @@ export default {
   'errors.huntNotFound': '존재하지 않는 사냥이에요.',
   'errors.huntEnded': '이미 종료된 사냥이에요.',
   'errors.unknownRoute': '알 수 없는 API 경로예요.',
+  "settings.privacy": "개인정보 처리방침",
+  "settings.deleteAccount": "내 계정 삭제",
+  "settings.deleteTitle": "계정을 삭제할까요?",
+  "settings.deleteText": "프로필, 사진, 목격 기록, 배지, 팔로워가 영구적으로 삭제돼요. 다른 헌터도 본 고양이는 커뮤니티 Chatdex에 남아요. 되돌릴 수 없어요.",
+  "settings.passwordConfirm": "확인을 위해 비밀번호를 입력하세요",
+  "settings.deleteConfirm": "영구 삭제",
+  "settings.deleted": "계정이 삭제되었어요.",
+  "errors.wrongPassword": "비밀번호가 틀렸어요.",
 };

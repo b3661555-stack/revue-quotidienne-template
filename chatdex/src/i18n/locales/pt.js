@@ -535,4 +535,12 @@ export default {
   'errors.huntNotFound': 'Esta caçada não existe.',
   'errors.huntEnded': 'Esta caçada já terminou.',
   'errors.unknownRoute': 'Rota de API desconhecida.',
+  "settings.privacy": "Política de privacidade",
+  "settings.deleteAccount": "Excluir minha conta",
+  "settings.deleteTitle": "Excluir sua conta?",
+  "settings.deleteText": "Isso apaga para sempre seu perfil, fotos, avistamentos, medalhas e seguidores. Gatos que outros caçadores também viram continuam no Chatdex da comunidade. Não dá para desfazer.",
+  "settings.passwordConfirm": "Digite sua senha para confirmar",
+  "settings.deleteConfirm": "Excluir para sempre",
+  "settings.deleted": "Sua conta foi excluída.",
+  "errors.wrongPassword": "Senha incorreta.",
 };

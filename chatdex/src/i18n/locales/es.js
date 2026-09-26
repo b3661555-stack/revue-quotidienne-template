@@ -535,4 +535,12 @@ export default {
   'errors.huntNotFound': 'Esta cacería no existe.',
   'errors.huntEnded': 'Esta cacería ya terminó.',
   'errors.unknownRoute': 'Ruta de API desconocida.',
+  "settings.privacy": "Política de privacidad",
+  "settings.deleteAccount": "Eliminar mi cuenta",
+  "settings.deleteTitle": "¿Eliminar tu cuenta?",
+  "settings.deleteText": "Se borrarán para siempre tu perfil, fotos, avistamientos, insignias y seguidores. Los gatos que otros cazadores también vieron seguirán en el Chatdex de la comunidad. No se puede deshacer.",
+  "settings.passwordConfirm": "Introduce tu contraseña para confirmar",
+  "settings.deleteConfirm": "Eliminar para siempre",
+  "settings.deleted": "Tu cuenta ha sido eliminada.",
+  "errors.wrongPassword": "Contraseña incorrecta.",
 };

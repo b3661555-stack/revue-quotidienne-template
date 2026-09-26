@@ -535,4 +535,12 @@ export default {
   'errors.huntNotFound': 'এই হান্টটির অস্তিত্ব নেই।',
   'errors.huntEnded': 'এই হান্টটি আগেই শেষ হয়ে গেছে।',
   'errors.unknownRoute': 'অজানা API রুট।',
+  "settings.privacy": "গোপনীয়তা নীতি",
+  "settings.deleteAccount": "আমার অ্যাকাউন্ট মুছুন",
+  "settings.deleteTitle": "আপনার অ্যাকাউন্ট মুছবেন?",
+  "settings.deleteText": "এতে আপনার প্রোফাইল, ছবি, দেখা, ব্যাজ ও ফলোয়ার চিরতরে মুছে যাবে। অন্য শিকারিরাও যে বিড়ালগুলো দেখেছেন সেগুলো কমিউনিটির Chatdex-এ থাকবে। এটি ফেরানো যাবে না।",
+  "settings.passwordConfirm": "নিশ্চিত করতে আপনার পাসওয়ার্ড দিন",
+  "settings.deleteConfirm": "চিরতরে মুছুন",
+  "settings.deleted": "আপনার অ্যাকাউন্ট মুছে ফেলা হয়েছে।",
+  "errors.wrongPassword": "ভুল পাসওয়ার্ড।",
 };

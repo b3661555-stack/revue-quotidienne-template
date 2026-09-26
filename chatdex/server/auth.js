@@ -26,16 +26,24 @@ export function createSession(res, userId) {
   run('INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)',
     token, userId, new Date(now).toISOString(), new Date(now + SESSION_DAYS * 86400000).toISOString());
   res.setHeader('Set-Cookie', cookieHeader(token, SESSION_DAYS * 86400));
+  return token;
 }
 
 export function destroySession(req, res) {
-  const token = readCookie(req);
+  const token = readToken(req);
   if (token) run('DELETE FROM sessions WHERE token = ?', token);
   res.setHeader('Set-Cookie', cookieHeader('', 0));
 }
 
 function cookieHeader(value, maxAge) {
   return `${COOKIE}=${value}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${config.cookieSecure ? '; Secure' : ''}`;
+}
+
+/** Web uses an HttpOnly cookie; the native apps send `Authorization: Bearer <token>`. */
+function readToken(req) {
+  const auth = req.headers.authorization || '';
+  if (auth.startsWith('Bearer ')) return auth.slice(7).trim() || null;
+  return readCookie(req);
 }
 
 function readCookie(req) {
@@ -49,7 +57,7 @@ function readCookie(req) {
 
 /** Populates req.user when a valid session cookie is present. */
 export function sessionMiddleware(req, _res, next) {
-  const token = readCookie(req);
+  const token = readToken(req);
   if (token) {
     const row = get(
       'SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = ? AND s.expires_at > ?',

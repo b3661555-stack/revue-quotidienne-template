@@ -13,7 +13,7 @@ import { findCandidates } from '../services/matcher.js';
 import { recordCapture } from '../services/captures.js';
 import { huntProgress } from '../services/hunts.js';
 import { addEvent, evaluateAchievements, notify, userStats } from '../services/progress.js';
-import { savePhoto } from '../services/uploads.js';
+import { deletePhotos, savePhoto } from '../services/uploads.js';
 import { catSummary, miniUser, MINI_USER_COLS, publicUser } from '../services/serialize.js';
 
 export const api = express.Router();
@@ -91,8 +91,8 @@ api.post('/auth/register', (req, res) => {
     emojis[Math.floor(Math.random() * emojis.length)], colors[Math.floor(Math.random() * colors.length)], nowIso()
   );
   const user = get('SELECT * FROM users WHERE id = ?', Number(r.lastInsertRowid));
-  createSession(res, user.id);
-  res.status(201).json(meResponse(user));
+  const token = createSession(res, user.id);
+  res.status(201).json({ ...meResponse(user), token });
 });
 
 api.post('/auth/login', (req, res) => {
@@ -101,8 +101,8 @@ api.post('/auth/login', (req, res) => {
   if (!user || !verifyPassword(String(req.body?.password || ''), user.password_hash)) {
     throw httpError(401, 'wrongCredentials');
   }
-  createSession(res, user.id);
-  res.json(meResponse(user));
+  const token = createSession(res, user.id);
+  res.json({ ...meResponse(user), token });
 });
 
 api.post('/auth/logout', (req, res) => {
@@ -130,6 +130,34 @@ api.patch('/me', requireAuth, (req, res) => {
   run('UPDATE users SET display_name = ?, bio = ?, avatar_emoji = ?, avatar_color = ?, favorite_cat_id = ? WHERE id = ?',
     displayName, bio, avatarEmoji, avatarColor, favoriteCatId, u.id);
   res.json(meResponse(u));
+});
+
+/**
+ * Deletes the account and everything it owns (sightings, photos, reactions, follows...).
+ * Cats stay in the community Chatdex if other hunters saw them; a cat nobody else saw is removed.
+ */
+api.delete('/me', requireAuth, (req, res) => {
+  const u = get('SELECT * FROM users WHERE id = ?', req.user.id);
+  if (!verifyPassword(String(req.body?.password || ''), u.password_hash)) throw httpError(403, 'wrongPassword');
+  const photos = all('SELECT photo, thumb FROM observations WHERE user_id = ?', u.id).flatMap((o) => [o.photo, o.thumb]).filter(Boolean);
+  const catIds = all('SELECT DISTINCT cat_id FROM observations WHERE user_id = ?', u.id).map((r) => r.cat_id);
+  tx(() => {
+    run('DELETE FROM users WHERE id = ?', u.id); // cascades to sessions, observations, reactions, follows, ...
+    for (const id of catIds) {
+      const agg = get('SELECT COUNT(*) AS n, COUNT(DISTINCT user_id) AS h, MAX(created_at) AS last FROM observations WHERE cat_id = ?', id);
+      if (!agg.n) { run('DELETE FROM cats WHERE id = ?', id); continue; }
+      const latest = get('SELECT photo, thumb FROM observations WHERE cat_id = ? AND photo IS NOT NULL ORDER BY created_at LIMIT 1', id);
+      const cat = get('SELECT photo FROM cats WHERE id = ?', id);
+      const photoGone = cat.photo && photos.includes(cat.photo);
+      run(`UPDATE cats SET observation_count = ?, hunter_count = ?, last_observed_at = ?,
+           photo = CASE WHEN ? THEN ? ELSE photo END, thumb = CASE WHEN ? THEN ? ELSE thumb END,
+           favorite_count = (SELECT COUNT(*) FROM favorites WHERE cat_id = ?) WHERE id = ?`,
+        agg.n, agg.h, agg.last, photoGone ? 1 : 0, latest?.photo ?? null, photoGone ? 1 : 0, latest?.thumb ?? null, id, id);
+    }
+  });
+  deletePhotos(photos);
+  destroySession(req, res);
+  res.json({ ok: true });
 });
 
 // ---------------------------------------------------------------- users

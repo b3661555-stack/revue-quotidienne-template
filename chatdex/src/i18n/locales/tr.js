@@ -535,4 +535,12 @@ export default {
   'errors.huntNotFound': 'Böyle bir av yok.',
   'errors.huntEnded': 'Bu av zaten sona erdi.',
   'errors.unknownRoute': 'Bilinmeyen API yolu.',
+  "settings.privacy": "Gizlilik politikası",
+  "settings.deleteAccount": "Hesabımı sil",
+  "settings.deleteTitle": "Hesabın silinsin mi?",
+  "settings.deleteText": "Profilin, fotoğrafların, gözlemlerin, rozetlerin ve takipçilerin kalıcı olarak silinir. Başka avcıların da gördüğü kediler topluluk Chatdex’inde kalır. Bu işlem geri alınamaz.",
+  "settings.passwordConfirm": "Onaylamak için şifreni gir",
+  "settings.deleteConfirm": "Kalıcı olarak sil",
+  "settings.deleted": "Hesabın silindi.",
+  "errors.wrongPassword": "Yanlış şifre.",
 };

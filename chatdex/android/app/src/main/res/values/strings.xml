@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Chatdex</string>
+    <string name="title_activity_main">Chatdex</string>
+    <string name="package_name">com.chatdex.app</string>
+    <string name="custom_url_scheme">com.chatdex.app</string>
+</resources>

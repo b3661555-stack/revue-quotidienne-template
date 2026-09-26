@@ -535,4 +535,12 @@ export default {
   'errors.huntNotFound': 'Такой охоты нет.',
   'errors.huntEnded': 'Эта охота уже завершена.',
   'errors.unknownRoute': 'Неизвестный маршрут API.',
+  "settings.privacy": "Политика конфиденциальности",
+  "settings.deleteAccount": "Удалить аккаунт",
+  "settings.deleteTitle": "Удалить аккаунт?",
+  "settings.deleteText": "Твой профиль, фото, наблюдения, значки и подписчики будут удалены навсегда. Коты, которых видели и другие охотники, останутся в общем Chatdex. Это действие нельзя отменить.",
+  "settings.passwordConfirm": "Введи пароль для подтверждения",
+  "settings.deleteConfirm": "Удалить навсегда",
+  "settings.deleted": "Твой аккаунт удалён.",
+  "errors.wrongPassword": "Неверный пароль.",
 };

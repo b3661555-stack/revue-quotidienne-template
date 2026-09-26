@@ -535,4 +535,12 @@ export default {
   'errors.huntNotFound': 'यह हंट मौजूद नहीं है।',
   'errors.huntEnded': 'यह हंट पहले ही खत्म हो चुका है।',
   'errors.unknownRoute': 'अनजान API रूट।',
+  "settings.privacy": "गोपनीयता नीति",
+  "settings.deleteAccount": "मेरा खाता हटाएँ",
+  "settings.deleteTitle": "अपना खाता हटाएँ?",
+  "settings.deleteText": "इससे आपकी प्रोफ़ाइल, फ़ोटो, दर्शन, बैज और फ़ॉलोअर हमेशा के लिए हट जाएँगे। जिन बिल्लियों को दूसरे शिकारियों ने भी देखा है, वे समुदाय के Chatdex में रहेंगी। इसे वापस नहीं किया जा सकता।",
+  "settings.passwordConfirm": "पुष्टि के लिए अपना पासवर्ड डालें",
+  "settings.deleteConfirm": "हमेशा के लिए हटाएँ",
+  "settings.deleted": "आपका खाता हटा दिया गया है।",
+  "errors.wrongPassword": "गलत पासवर्ड।",
 };

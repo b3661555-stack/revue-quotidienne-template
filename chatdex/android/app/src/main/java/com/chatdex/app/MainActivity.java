@@ -1,0 +1,5 @@
+package com.chatdex.app;
+
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {}

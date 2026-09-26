@@ -537,4 +537,12 @@ export default {
   'errors.huntNotFound': 'This hunt does not exist.',
   'errors.huntEnded': 'This hunt has already ended.',
   'errors.unknownRoute': 'Unknown API route.',
+  "settings.privacy": "Privacy policy",
+  "settings.deleteAccount": "Delete my account",
+  "settings.deleteTitle": "Delete your account?",
+  "settings.deleteText": "This permanently deletes your profile, photos, sightings, badges and followers. Cats that other hunters have also seen stay in the community Chatdex. This cannot be undone.",
+  "settings.passwordConfirm": "Enter your password to confirm",
+  "settings.deleteConfirm": "Delete forever",
+  "settings.deleted": "Your account has been deleted.",
+  "errors.wrongPassword": "Wrong password.",
 };

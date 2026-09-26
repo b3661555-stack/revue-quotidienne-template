@@ -7,6 +7,19 @@ import { errorBody } from './errors.js';
 export function createApp() {
   const app = express();
   app.disable('x-powered-by');
+  app.use((req, res, next) => {
+    // CORS for the native apps, which load the UI from capacitor://localhost or https://localhost.
+    const origin = req.headers.origin;
+    if (origin && config.corsOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Vary', 'Origin');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Max-Age', '86400');
+      if (req.method === 'OPTIONS') return res.status(204).end();
+    }
+    next();
+  });
   app.use(express.json({ limit: '15mb' }));
   app.use(sessionMiddleware);
   app.use('/uploads', express.static(config.uploadsDir, { maxAge: '30d', immutable: true, fallthrough: false }));

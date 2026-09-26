@@ -42,6 +42,7 @@ All optional; copy `.env.example` to `.env`.
 | `DATA_DIR` | `./data` | SQLite database (`chatdex.db`) and uploaded photos (`uploads/`) |
 | `DB_PATH` | `$DATA_DIR/chatdex.db` | Override the database file |
 | `DEMO_DATA` | `true` | Seed the demo world on first start |
+| `CORS_ORIGINS` | `capacitor://localhost,https://localhost,http://localhost` | Origins allowed to call the API cross-origin (the native apps) |
 | `CAT_DETECTOR` | `coco-ssd` | In-browser cat detection (TensorFlow.js from jsDelivr). `off` = always ask the user |
 | `MISSING_AFTER_DAYS` | `30` | Days without sightings before a cat shows as "not observed recently" |
 | `COOKIE_SECURE` | `false` | Set `true` behind HTTPS |
@@ -56,7 +57,24 @@ docker build -t chatdex .
 docker run -p 3000:3000 -v chatdex-data:/data -e COOKIE_SECURE=true chatdex
 ```
 
-**Render / Railway / Fly.io:** build command `npm ci && npm run build`, start command `npm start`, mount a persistent volume and set `DATA_DIR` to it. Put it behind HTTPS (these platforms do by default) and set `COOKIE_SECURE=true`. For production, set `DEMO_DATA=false` or run `npm run demo:clear` once real users arrive.
+**Render:** `render.yaml` at the repository root is a ready Blueprint (Render → New → Blueprint), with a 1 GB persistent disk for the database and photos.
+
+**Railway / Fly.io:** build command `npm ci && npm run build`, start command `npm start`, mount a persistent volume and set `DATA_DIR` to it. Put it behind HTTPS (these platforms do by default) and set `COOKIE_SECURE=true`. For production, set `DEMO_DATA=false` or run `npm run demo:clear` once real users arrive.
+
+## Mobile apps (iOS and Android)
+
+`android/` and `ios/` are [Capacitor](https://capacitorjs.com) projects that bundle the web UI and talk to your deployed server (bearer-token auth, CORS allowed for `capacitor://localhost` and `https://localhost`).
+
+```bash
+CHATDEX_API_URL=https://your-chatdex.onrender.com npm run build:mobile   # build UI + copy into native projects
+npm run cap:android    # open in Android Studio
+npm run cap:ios        # open in Xcode (macOS)
+```
+
+- Permission prompts (camera, photos, location) are localized in 15 languages: `scripts/native-permissions.py` (re-run after re-creating a platform).
+- Icons and splash screens come from `assets/` (`npx @capacitor/assets generate`).
+- GitHub Actions (`.github/workflows/chatdex-mobile.yml`) builds a debug APK on every push and, on manual runs, an unsigned iOS simulator build. Set the repository variable `CHATDEX_API_URL`.
+- Step-by-step publishing guide (French): [`docs/PUBLIER.md`](docs/PUBLIER.md). Store listing texts: [`docs/fiches-stores.md`](docs/fiches-stores.md). Privacy policy: `public/privacy.html` (served at `/privacy.html`).
 
 ## Architecture
 
@@ -144,7 +162,7 @@ Deterministic, based on how unusual the visual combination is (coat + pattern + 
 - Real cat re-identification model (embeddings / vision API) and learning from `match_feedback`
 - Push notifications and real-time (WebSocket) hunts; the app polls instead
 - Moderation dashboard (reports are stored and auto-hide content, but there's no admin UI)
-- Password reset by email, OAuth providers, account deletion UI
+- Password reset by email, OAuth providers
 - Photo storage on S3/R2 and image CDN; EXIF stripping on the server (the browser re-encodes photos, which already drops EXIF)
 - Community events, recommendations, analytics, global leaderboards (friendly comparison only)
-- Native app wrappers / offline capture queue
+- Offline capture queue, push notifications in the native apps

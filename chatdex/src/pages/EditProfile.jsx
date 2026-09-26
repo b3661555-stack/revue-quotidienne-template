@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
-import { api } from '../api.js';
+import { api, mediaUrl } from '../api.js';
 import { useApp, useApi } from '../store.jsx';
-import { Avatar, Page, TopBar } from '../components/ui.jsx';
+import { Avatar, Page, Sheet, TopBar } from '../components/ui.jsx';
 import { Guidelines } from './Welcome.jsx';
 import { errorText, LanguageSelect, useT } from '../i18n/index.jsx';
 
@@ -24,6 +24,22 @@ export default function EditProfile() {
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const [deleteError, setDeleteError] = useState(null);
+
+  const deleteAccount = async () => {
+    setBusy(true);
+    setDeleteError(null);
+    try {
+      await api('/me', { method: 'DELETE', body: { password } });
+      toast(t('settings.deleted'), 'success');
+      await logout();
+    } catch (err) {
+      setDeleteError(errorText(t, err));
+      setBusy(false);
+    }
+  };
 
   const save = async (e) => {
     e.preventDefault();
@@ -72,6 +88,17 @@ export default function EditProfile() {
       <div className="mt"><Guidelines /></div>
       <p className="muted small center">{t('settings.signedInAs', { email: me.user.email })}</p>
       <button className="btn btn-ghost btn-block danger" onClick={logout}><LogOut size={18} /> {t('settings.logout')}</button>
+      <a className="btn btn-link" href={mediaUrl('/privacy.html')} target="_blank" rel="noreferrer">{t('settings.privacy')}</a>
+      <button className="btn btn-link danger" onClick={() => setDeleteOpen(true)}>{t('settings.deleteAccount')}</button>
+      <Sheet open={deleteOpen} onClose={() => setDeleteOpen(false)} title={t('settings.deleteTitle')}>
+        <p>{t('settings.deleteText')}</p>
+        <label className="field">
+          <span>{t('settings.passwordConfirm')}</span>
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+        </label>
+        {deleteError && <p className="form-error" role="alert">{deleteError}</p>}
+        <button className="btn btn-primary btn-block danger-bg" disabled={!password || busy} onClick={deleteAccount}>{t('settings.deleteConfirm')}</button>
+      </Sheet>
     </Page>
   );
 }

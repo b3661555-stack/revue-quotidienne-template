@@ -535,4 +535,12 @@ export default {
   'errors.huntNotFound': 'Perburuan ini tidak ada.',
   'errors.huntEnded': 'Perburuan ini sudah berakhir.',
   'errors.unknownRoute': 'Rute API tidak dikenal.',
+  "settings.privacy": "Kebijakan privasi",
+  "settings.deleteAccount": "Hapus akun saya",
+  "settings.deleteTitle": "Hapus akunmu?",
+  "settings.deleteText": "Ini akan menghapus profil, foto, penampakan, lencana, dan pengikutmu secara permanen. Kucing yang juga dilihat pemburu lain tetap ada di Chatdex komunitas. Tindakan ini tidak bisa dibatalkan.",
+  "settings.passwordConfirm": "Masukkan kata sandimu untuk konfirmasi",
+  "settings.deleteConfirm": "Hapus selamanya",
+  "settings.deleted": "Akunmu telah dihapus.",
+  "errors.wrongPassword": "Kata sandi salah.",
 };

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { BookOpen, Camera, ChevronLeft, Compass, House, User, WifiOff, X } from 'lucide-react';
 import { catSvg } from '../lib/catArt.js';
+import { mediaUrl } from '../api.js';
 import { useApp } from '../store.jsx';
 import { errorText, useT } from '../i18n/index.jsx';
 
@@ -25,7 +26,7 @@ export function CatArt({ cat, variant, className = '', background = true }) {
 /** Real photo when there is one, otherwise the cat's procedural portrait. */
 export function CatImage({ cat, photo, thumb, variant, full = false, className = '', alt }) {
   const [failed, setFailed] = useState(false);
-  const src = full ? photo || thumb : thumb || photo;
+  const src = mediaUrl(full ? photo || thumb : thumb || photo);
   if (src && !failed) {
     return <img className={`cat-img ${className}`} src={src} alt={alt || cat?.name || 'Cat'} loading="lazy" onError={() => setFailed(true)} />;
   }
