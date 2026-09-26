@@ -1,0 +1,10 @@
+{
+  "name": "Chatdex",
+  "short_name": "Chatdex",
+  "description": "Gotta catch 'em cats.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff7ee",
+  "theme_color": "#fff7ee",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
