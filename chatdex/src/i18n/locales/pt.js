@@ -453,7 +453,7 @@ export default {
   'hunt.start': 'Começar a caçada',
   'hunt.started': 'Caçada iniciada! Boa sorte',
   'hunt.pickTown': 'Escolha uma cidade.',
-  'hunt.together': 'Cacem juntos',
+  'hunt.together': 'Caçar juntos',
   'hunt.intro': 'Junte-se a outros para um passeio com tempo marcado. Cada gato que qualquer caçador encontrar conta para a meta. Complete para ganhar +{xp} XP cada um.',
   'hunt.startA': 'Começar uma caçada',
   'hunt.now': 'Acontecendo agora',
